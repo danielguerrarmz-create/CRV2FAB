@@ -95,6 +95,10 @@ const check = (name, ok, detail) => { if (!ok) fails++; console.log(`${ok ? 'ok 
   const out = r.status === 0 ? fs.readFileSync(path.join(tmp, 'dist/index.html'), 'utf8') : '';
   check('build_py_utf8_round_trip', r.status === 0 && out.includes('Łódź × ² …') && out.includes('global.Helpers') && out.includes('global.Billet') && !out.includes('/*__CORE__*/'), r.status === 0 ? '' : (r.stderr || '').trim().split('\n').pop());
   const vendored = ['three/build/three.module.js', 'three/examples/jsm/controls/OrbitControls.js', 'jspdf/jspdf.umd.min.js', 'fflate/umd/index.js'];
+  // every reference the built page can load: src, href, import specifiers and the import map, fetch(), url()
+  const built = r.status === 0 ? fs.readFileSync(path.join(tmp, 'dist/index.html'), 'utf8') : '';
+  const refs = [...built.matchAll(/\b(?:src|href)\s*=\s*["']([^"']+)["']|\bimport\s+(?:[\w*{}\s,]+\s+from\s+)?["']([^"']+)["']|\bimport\(\s*["'`]([^"'`]+)|\bfetch\(\s*["'`]([^"'`]+)|url\(\s*["']?([^"')]+)|"(?:three|three\/addons\/)"\s*:\s*"([^"]+)"/g)].map(m => m.slice(1).find(Boolean));
+  check('built_page_references_nothing_remote', refs.length > 0 && !refs.some(u => /^(https?:)?\/\//i.test(u)), refs.filter(u => /^(https?:)?\/\//i.test(u)).join(' ') || `${refs.length} local references`);
   check('build_copies_vendored_libraries', r.status === 0 && vendored.every(f => fs.existsSync(path.join(tmp, 'dist/vendor', f))));
   fs.rmSync(tmp, { recursive: true, force: true });
 }

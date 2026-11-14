@@ -24,3 +24,5 @@ the repo ignores every `dist/` folder. For three.js, `three/addons/...` in the p
 
 jsPDF 2.5.1 has published security advisories; an upgrade needs its own decision (DEBT D-011). Its optional
 helpers (html2canvas, dompurify, canvg) are not shipped and are only loaded by features the analyzer does not use.
+jsPDF also contains a pdfobject CDN address used only by `output('pdfobjectnewwindow')`; the analyzer calls
+`output('arraybuffer')`, so it is never requested.
