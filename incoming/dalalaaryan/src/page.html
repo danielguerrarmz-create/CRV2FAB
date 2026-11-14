@@ -116,9 +116,9 @@ body.sketching .legend,body.sketching .verdict{opacity:.25;pointer-events:none}
 #sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;flex-direction:column;gap:6px;align-items:center;border-radius:14px!important;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px}
 .skrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
 #sketchbar [data-sk] i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
-#sketchbar [data-sk].on{border-color:#1d1d1b;background:#1d1d1b;color:#fff} #sketchbar [data-sk].has:not(.on)::after{content:' ✓';color:var(--ok)}
+#sketchbar [data-sk].on,#sketchbar #skRotate.on{border-color:#1d1d1b!important;background:#1d1d1b!important;color:#fff!important} #sketchbar{color:#1d1d1b;color-scheme:light} body.orbiting #sketch{pointer-events:none;cursor:grab} #sketchbar [data-sk].has:not(.on)::after{content:' ✓';color:var(--ok)}
 #skHint{color:var(--mute);margin-right:4px}
-#sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
+#sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;color:#1d1d1b;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
 body.route-billet .boards-only{display:none!important} body:not(.route-billet) .billet-only{display:none!important}
 .route{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);padding:3px;border-radius:7px;margin-bottom:10px}
 .route button{border:0;background:none;padding:7px 4px;border-radius:5px;font:500 12px var(--sans);cursor:pointer;color:var(--mute);line-height:1.25}
@@ -148,7 +148,7 @@ body.route-billet .boards-only{display:none!important} body:not(.route-billet) .
 #iterNote{font-size:12px;color:var(--ink);margin-top:8px;line-height:1.45}
 #sketch{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;background:rgba(255,122,0,.03)}
 #sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;flex-direction:column;gap:6px;align-items:center;border-radius:14px!important;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px;white-space:nowrap}
-#sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
+#sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;color:#1d1d1b;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
 body.sketching .legend,body.sketching .verdict{opacity:.25;pointer-events:none}
 .slider{display:grid;grid-template-columns:1fr 54px;gap:8px;align-items:center;margin:7px 0;font-size:12.5px}
 .slider input[type=range]{grid-column:1/3;width:100%;accent-color:var(--timber)} .slider b{font:500 12px var(--mono);text-align:right}
@@ -227,7 +227,7 @@ body.kind-solid .not-solid{display:none!important}
       <div class="slider"><span>Twist along the member</span><b id="twistV">100%</b><input type="range" id="twist" min="0" max="100" value="100"></div>
       <button class="btn sec" id="manualApply">Apply these as an edit</button>
     </div>
-    <p class="note">Sketch with three strokes: the start profile (blue, across the width at the start), the end profile (purple, at the end) and the bending path (orange). Any you skip keep the current member's. The member's centreline is drawn with orange control points. Claude gets the shape, the limits and why it fails, tests candidates with the same check, and returns a new shape with its reasoning. A sketch is checked first; if it fails, Claude gets your sketch image and keeps its shape as far as it can.</p>
+    <p class="note">Sketch with three strokes: the start profile (blue, across the width at the start), the end profile (purple, at the end) and the bending path (orange). Any you skip keep the current member's. Use Rotate view between strokes: each stroke stays fixed to the model, so draw profiles looking along the member. The member's centreline is drawn with orange control points. Claude gets the shape, the limits and why it fails, tests candidates with the same check, and returns a new shape with its reasoning. A sketch is checked first; if it fails, Claude gets your sketch image and keeps its shape as far as it can.</p>
   </section>
 
   <section>
@@ -270,7 +270,7 @@ body.kind-solid .not-solid{display:none!important}
     <div class="verdict" id="verdict" style="display:none"><div class="k">This member</div><div class="v" id="vV"></div><div class="d" id="vD"></div></div>
     <div class="legend" id="legend" style="display:none"><div class="t" id="lgT"></div><div class="s" id="lgS"></div><canvas id="lgC" width="600" height="68"></canvas></div>
     <canvas id="sketch" style="display:none"></canvas>
-    <div id="sketchbar"><div class="skrow"><button data-sk="start"><i style="background:#2c6cb0"></i>Start profile</button><button data-sk="end"><i style="background:#7a4fd0"></i>End profile</button><button data-sk="bend" class="on"><i style="background:#ff7a00"></i>Bending</button></div>
+    <div id="sketchbar"><div class="skrow"><button data-sk="start"><i style="background:#2c6cb0"></i>Start profile</button><button data-sk="end"><i style="background:#7a4fd0"></i>End profile</button><button data-sk="bend" class="on"><i style="background:#ff7a00"></i>Bending</button><button id="skRotate" title="Rotate / zoom the model; your strokes stay attached to it">⟲ Rotate view</button></div>
       <div class="skrow"><span id="skHint">Draw the path the member bends along</span><button id="skClear">Clear</button><button id="skCancel">Cancel</button><button class="pri" id="skApply">Check my sketch</button></div></div>
     <div class="busy" id="busy">Working…</div>
   </div>
@@ -664,18 +664,30 @@ Reply with ONLY JSON: {"control_points": [[x,y,z], ...] (4 to 9 points, mm)${k==
 
 /* ---------- sketch: start profile, end profile, bending ---------- */
 const SK_COL={start:'#2c6cb0', end:'#7a4fd0', bend:'#ff7a00'}, SK_HINT={start:'Draw the cross-section at the START (across the width)', end:'Draw the cross-section at the END (across the width)', bend:'Draw the path the member bends along'};
-const sk={ tool:'bend', strokes:{start:[], end:[], bend:[]}, drawing:false };
-function setTool(t){ sk.tool=t; document.querySelectorAll('[data-sk]').forEach(b=>{ b.classList.toggle('on',b.dataset.sk===t); b.classList.toggle('has',sk.strokes[b.dataset.sk].length>1); }); $('skHint').textContent=SK_HINT[t]; }
-function sketchMode(on){ S.sketching=on; document.body.classList.toggle('sketching',on); $('sketch').style.display=on?'':'none'; $('sketchbar').style.display=on?'flex':'none'; controls.enabled=!on;
-  sk.strokes={start:[], end:[], bend:[]}; setTool('bend'); drawSketch(); if(S.iters.length) render(false); }
-function drawSketch(){ const c=$('sketch'), r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1; c.width=Math.max(1,r.width*dpr); c.height=Math.max(1,r.height*dpr); const x=c.getContext('2d'); x.scale(dpr,dpr);
+const sk={ tool:'bend', strokes:{start:[], end:[], bend:[]}, live:[], drawing:false, orbit:false };
+function setTool(t){ sk.tool=t; setOrbit(false); document.querySelectorAll('[data-sk]').forEach(b=>{ b.classList.toggle('on',b.dataset.sk===t); b.classList.toggle('has',sk.strokes[b.dataset.sk].length>1); }); $('skHint').textContent=SK_HINT[t]; }
+function setOrbit(on){ sk.orbit=on; document.body.classList.toggle('orbiting',on); controls.enabled=on||!S.sketching; $('skRotate').classList.toggle('on',on);
+  if(on){ document.querySelectorAll('[data-sk]').forEach(b=>b.classList.remove('on')); $('skHint').textContent='Drag to rotate, scroll to zoom. Pick a stroke to draw again.'; } }
+function sketchMode(on){ S.sketching=on; document.body.classList.toggle('sketching',on); $('sketch').style.display=on?'':'none'; $('sketchbar').style.display=on?'flex':'none';
+  sk.strokes={start:[], end:[], bend:[]}; sk.live=[]; setTool('bend'); controls.enabled=!on; drawSketch(); if(S.iters.length) render(false); }
+function toScreen(p){ const c=$('sketch'), r=c.getBoundingClientRect(), v=new THREE.Vector3(...p).project(camera); return [(v.x+1)/2*r.width, (1-v.y)/2*r.height]; }
+function drawSketch(){ const c=$('sketch'); if(!S.sketching&&c.style.display==='none') return; const r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1, W=Math.max(1,Math.round(r.width*dpr)), H=Math.max(1,Math.round(r.height*dpr));
+  if(c.width!==W||c.height!==H){ c.width=W; c.height=H; } const x=c.getContext('2d'); x.setTransform(dpr,0,0,dpr,0,0);
   x.clearRect(0,0,r.width,r.height); x.lineCap='round'; x.lineJoin='round';
-  for(const k of ['start','end','bend']){ const pts=sk.strokes[k]; if(pts.length<2) continue; x.strokeStyle=SK_COL[k]; x.lineWidth=k===sk.tool?5:3.5; x.beginPath(); x.moveTo(pts[0][0],pts[0][1]); for(const p of pts) x.lineTo(p[0],p[1]); x.stroke(); } }
+  const line=(pts,k,w)=>{ if(pts.length<2) return; x.strokeStyle=SK_COL[k]; x.lineWidth=w; x.beginPath(); x.moveTo(pts[0][0],pts[0][1]); for(const p of pts) x.lineTo(p[0],p[1]); x.stroke(); };
+  for(const k of ['start','end','bend']) line(sk.strokes[k].map(toScreen), k, k===sk.tool&&!sk.orbit?5:3.5);
+  if(sk.drawing) line(sk.live, sk.tool, 5); }
+function anchorFor(k){ const it=S.iters[S.cur], P=it.P; return k==='start'? P[0] : k==='end'? P[P.length-1] : P.reduce((a,p)=>v3.add(a,v3.sc(p,1/P.length)),[0,0,0]); }
 (()=>{ const c=$('sketch'), at=(e)=>{ const r=c.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
-  c.addEventListener('pointerdown',e=>{ sk.drawing=true; sk.strokes[sk.tool]=[at(e)]; c.setPointerCapture(e.pointerId); drawSketch(); });
-  c.addEventListener('pointermove',e=>{ if(!sk.drawing) return; const pts=sk.strokes[sk.tool], p=at(e), l=pts[pts.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])>3){ pts.push(p); drawSketch(); } });
-  c.addEventListener('pointerup',()=>{ sk.drawing=false; setTool(sk.tool); });
-  document.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{ setTool(b.dataset.sk); drawSketch(); }); })();
+  c.addEventListener('pointerdown',e=>{ if(sk.orbit) return; sk.drawing=true; sk.live=[at(e)]; c.setPointerCapture(e.pointerId); drawSketch(); });
+  c.addEventListener('pointermove',e=>{ if(!sk.drawing) return; const p=at(e), l=sk.live[sk.live.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])>3){ sk.live.push(p); drawSketch(); } });
+  c.addEventListener('pointerup',()=>{ if(!sk.drawing) return; sk.drawing=false;
+    // fix the stroke in 3D now, with the camera it was drawn in, so the view can be rotated afterwards
+    if(sk.live.length>=5) sk.strokes[sk.tool]=strokeTo3D(sk.live, sk.tool==='bend'?60:30, anchorFor(sk.tool));
+    sk.live=[]; setTool(sk.tool); drawSketch(); });
+  document.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{ setTool(b.dataset.sk); drawSketch(); });
+  $('skRotate').onclick=()=>{ setOrbit(!sk.orbit); drawSketch(); };
+  controls.addEventListener('change', ()=>{ if(S.sketching) drawSketch(); }); })();
 /* screen stroke -> N evenly spaced 3D points on the view plane through `anchor` */
 function strokeTo3D(pts, N, anchor){ const c=$('sketch'), r=c.getBoundingClientRect();
   const cum=[0]; for(let i=1;i<pts.length;i++) cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
@@ -702,12 +714,12 @@ async function applySketch(){
   if(!has('start')&&!has('end')&&!has('bend')){ aiSay('Draw at least one stroke first: start profile, end profile or bending.','warn'); return; }
   // bending path
   let Pb=base.P;
-  if(has('bend')){ const cen=base.P.reduce((a,p)=>v3.add(a,v3.sc(p,1/base.P.length)),[0,0,0]); let P=strokeTo3D(st.bend, Math.max(7,base.P.length), cen);
+  if(has('bend')){ const cen=base.P.reduce((a,p)=>v3.add(a,v3.sc(p,1/base.P.length)),[0,0,0]); let P=resampleLen(st.bend, Math.max(7,base.P.length)).pts;
     if(P.length<4){ aiSay('Couldn’t place the bending stroke in 3D. Try another view.','warn'); return; }
     const e0=v3.len(v3.sub(P[0],base.P[0]))+v3.len(v3.sub(P[P.length-1],base.P[base.P.length-1])), e1=v3.len(v3.sub(P[P.length-1],base.P[0]))+v3.len(v3.sub(P[0],base.P[base.P.length-1]));
     if(e1<e0) P=P.slice().reverse(); Pb=pinEnds(P,ref); }
   // profiles
-  let profS=has('start')? strokeTo3D(st.start, 15, Pb[0]) : null, profE=has('end')? strokeTo3D(st.end, 15, Pb[Pb.length-1]) : null;
+  let profS=has('start')? st.start.map(p=>v3.add(p, v3.sub(Pb[0], anchorFor('start')))) : null, profE=has('end')? st.end.map(p=>v3.add(p, v3.sub(Pb[Pb.length-1], anchorFor('end')))) : null;
   const parts=[has('start')&&'start profile', has('end')&&'end profile', has('bend')&&'bending path'].filter(Boolean);
   const img=new Image(); img.src=renderer.domElement.toDataURL('image/png'); await img.decode();
   const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height; const x=cv.getContext('2d'); x.drawImage(img,0,0); x.drawImage($('sketch'),0,0,img.width,img.height);
@@ -846,7 +858,7 @@ $('units').addEventListener('change',()=>{ if(S.srcDoc) buildFromDoc(); });
 $('manualApply').onclick=()=>{ const it=S.iters[S.cur]; pushIter(`Edit #${S.iters.filter(x=>x.source==='manual').length+1}`,'manual',it.P,curBase().kind==='sheet'?+$('cross').value/100:1,+$('twist').value/100,{rationale:`Across-width curvature ${$('cross').value}% and twist ${$('twist').value}% of the design.`}); };
 $('askAI').onclick=()=>askClaude(); $('aiStop').onclick=()=>aiCtl&&aiCtl.abort();
 $('autoRelax').onclick=()=>{ busy(true); setTimeout(()=>{ autoRelax(); busy(false); const ok=S.iters[S.cur].ev.ok; aiSay(ok?'Auto-relax found a buildable variant.':'Auto-relax couldn’t find one with these settings.', ok?'ok':'warn'); },20); };
-$('sketchBtn').onclick=()=>sketchMode(true); $('skApply').onclick=()=>applySketch(); $('skClear').onclick=()=>{ sk.strokes[sk.tool]=[]; setTool(sk.tool); drawSketch(); }; $('skCancel').onclick=()=>sketchMode(false);
+$('sketchBtn').onclick=()=>sketchMode(true); $('skApply').onclick=()=>applySketch(); $('skClear').onclick=()=>{ if(!sk.orbit) sk.strokes[sk.tool]=[]; setTool(sk.tool); drawSketch(); }; $('skCancel').onclick=()=>sketchMode(false);
 </script>
 </body>
 </html>
