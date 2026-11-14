@@ -31,9 +31,11 @@ The current phase is set at the bottom of `README.md`. Check it before you start
 ## Git
 
 - Never force-push `main`. Never rewrite shared history. (`main` is protected against force pushes.)
-- Direct commits to `main` are allowed **only** for changes inside your human's own `incoming/<handle>/`
-  folder and for appended rows in the shared logs. Everything else goes on a branch named
-  `<handle>/<short-topic>` with a pull request.
+- **Nobody pushes to `main`. Not humans, not agents, not repo admins.** GitHub enforces it: every change
+  reaches `main` through a pull request with one approving review from another collaborator. That
+  includes changes inside your own `incoming/<handle>/` folder and appended rows in the shared logs.
+- Work on a branch named `<handle>/<short-topic>` and open a pull request.
+- Agents never approve or merge a pull request. A human reviews and merges it.
 - One purpose per commit. Message format: `<area>: <what changed>`, for example
   `incoming/alex: add curve offset script`.
 - Before committing, run `git status` and `git diff --staged` and confirm you are staging only your own
