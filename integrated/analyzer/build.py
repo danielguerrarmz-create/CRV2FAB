@@ -1,4 +1,4 @@
-"""Build dist/ : inline src/core.js + src/billet.js + src/helpers.js into src/page.html and copy the rhino3dm runtime."""
+"""Build dist/ : inline src/core.js + src/billet.js + src/helpers.js into src/page.html and copy the vendored runtime."""
 import pathlib, shutil
 root = pathlib.Path(__file__).parent
 page = (root / "src/page.html").read_text(encoding="utf-8")
@@ -7,4 +7,6 @@ dist = root / "dist"; dist.mkdir(exist_ok=True)
 (dist / "index.html").write_text(page.replace("/*__CORE__*/", core), encoding="utf-8")
 for f in ("rhino3dm.min.js", "rhino3dm.wasm"):
     shutil.copy(root / "vendor" / f, dist / f)
+for lib in ("three", "jspdf", "fflate"):  # three.js, jsPDF and fflate, vendored so the page makes no network requests
+    shutil.copytree(root / "vendor" / lib, dist / "vendor" / lib, dirs_exist_ok=True)
 print("built", dist / "index.html")

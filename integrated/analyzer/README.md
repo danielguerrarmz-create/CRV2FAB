@@ -30,7 +30,9 @@ python -m http.server 8000 -d dist
 # open http://localhost:8000 , pick a sample or drop a .3dm
 ```
 
-The page needs internet: three.js, jsPDF and fflate load from CDNs (DEBT D-011). rhino3dm is vendored.
+The built page makes no network requests: rhino3dm, three.js 0.160.0, jsPDF 2.5.1 and fflate 0.8.2 are vendored
+(`vendor/README.md` lists sources and sha256), and the web fonts were dropped in favour of installed or system
+fonts (D-015).
 
 ## Layout
 
@@ -40,7 +42,7 @@ src/core.js      curvature analysis and timber checks (from the drop, unchanged)
 src/billet.js    singly curved billet fit (from the drop, unchanged; see DECISIONS 4)
 src/helpers.js   pure functions pulled out of page.html during integration, tested under node
 tests/           node tests
-vendor/          rhino3dm 8.35.0 js + wasm (McNeel, MIT)
+vendor/          rhino3dm 8.35.0, three 0.160.0, jspdf 2.5.1, fflate 0.8.2 (all MIT); see vendor/README.md
 build.py         inlines src/*.js into dist/index.html
 ```
 
@@ -73,5 +75,5 @@ Interface change: in billet mode `summary.json` `stock` describes the billet (fo
 ## Known debt
 
 D-002 to D-013 in [`docs/DEBT.md`](../../docs/DEBT.md). The ones specific to this copy: D-009 (it duplicates the
-drop), D-010 (trimmed faces), D-011 (CDN libraries, jsPDF advisories), D-012 (splitter placeholders),
-D-013 (not yet opened in Rhino 7), D-014 (billet.js stays only until the analyzer can call the shared billet logic).
+drop), D-010 (trimmed faces), D-011 (jsPDF 2.5.1 advisories), D-012 (splitter placeholders),
+D-013 (not yet opened in Rhino 7), D-015 (no web fonts), D-014 (billet.js stays only until the analyzer can call the shared billet logic).

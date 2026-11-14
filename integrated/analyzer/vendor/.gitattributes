@@ -1,0 +1,4 @@
+# Vendored third-party files are stored and checked out byte for byte, so their sha256 matches vendor/README.md.
+three/** -text
+jspdf/** -text
+fflate/** -text

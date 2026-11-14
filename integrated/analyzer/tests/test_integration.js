@@ -94,7 +94,19 @@ const check = (name, ok, detail) => { if (!ok) fails++; console.log(`${ok ? 'ok 
   const r = spawnSync(py, ['build.py'], { cwd: tmp, env: { ...process.env, PYTHONUTF8: '0' }, encoding: 'utf8' });
   const out = r.status === 0 ? fs.readFileSync(path.join(tmp, 'dist/index.html'), 'utf8') : '';
   check('build_py_utf8_round_trip', r.status === 0 && out.includes('Łódź × ² …') && out.includes('global.Helpers') && out.includes('global.Billet') && !out.includes('/*__CORE__*/'), r.status === 0 ? '' : (r.stderr || '').trim().split('\n').pop());
+  const vendored = ['three/build/three.module.js', 'three/examples/jsm/controls/OrbitControls.js', 'jspdf/jspdf.umd.min.js', 'fflate/umd/index.js'];
+  check('build_copies_vendored_libraries', r.status === 0 && vendored.every(f => fs.existsSync(path.join(tmp, 'dist/vendor', f))));
   fs.rmSync(tmp, { recursive: true, force: true });
+}
+
+// Libraries are vendored: the page references no remote URL, and every vendored file matches vendor/README.md.
+{
+  const urls = [...page.matchAll(/(?:src|href)\s*=\s*["']([^"']+)["']|["'](https?:\/\/[^"']+)["']/g)].map(m => m[1] || m[2]).filter(u => /^(https?:)?\/\//.test(u));
+  check('page_makes_no_remote_requests', urls.length === 0, urls.join(' '));
+  const crypto = require('crypto'), readme = fs.readFileSync(path.join(root, 'vendor/README.md'), 'utf8');
+  const rows = [...readme.matchAll(/`([a-z]+\/[^`]+)`[^|]*\| (\d+) \| `([0-9a-f]{64})`/g)];
+  const bad = rows.filter(([, f, n, h]) => { const b = fs.readFileSync(path.join(root, 'vendor', f)); return b.length !== +n || crypto.createHash('sha256').update(b).digest('hex') !== h; });
+  check('vendored_files_match_readme_sha256', rows.length === 7 && bad.length === 0, bad.map(b => b[1]).join(' '));
 }
 
 // 2 and the trimmed-face flag need the rhino3dm runtime (vendored); run them last.

@@ -4,8 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Timber Surface Curvature Analyzer</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<!-- integration: no web fonts; IBM Plex is used when installed, else the system font (zero network requests, DEBT) -->
 <style>
 :root{
   --paper:#f4f2ed; --panel:#fbfaf7; --ink:#1d1d1b; --mute:#6b6a65; --line:#dcd8cf; --line2:#e9e6df;
@@ -126,10 +125,10 @@ body.route-billet .boards-only{display:none!important} body:not(.route-billet) .
 }
 </style>
 <script src="rhino3dm.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script src="vendor/jspdf/jspdf.umd.min.js"></script>
+<script src="vendor/fflate/umd/index.js"></script>
 <script type="importmap">
-{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+{"imports":{"three":"./vendor/three/build/three.module.js","three/addons/":"./vendor/three/examples/jsm/"}}
 </script>
 </head>
 <body>
