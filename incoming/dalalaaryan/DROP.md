@@ -4,7 +4,7 @@ Curved Member Fabrication Loop. A browser tool that treats a Rhino surface, soli
 
 | Field | Answer |
 |---|---|
-| What it does (one sentence) | Loads one member (surface → curved plate, closed solid, or curve → centreline + section) from `.3dm`, analyses its curvature, fits one singly curved glulam billet, explains why it fails (CNC opening, waste, lam R/t), and iterates the shape with Claude (artifact `sample` + tool), a pen sketch over the 3D view, or auto-relax; exports PDF / `.3dm` / PNG. |
+| What it does (one sentence) | Loads one member (surface → curved plate, closed solid, or curve → centreline + section) from `.3dm`, analyses its curvature, fits one singly curved glulam billet, explains why it fails (CNC opening, waste, lam R/t), and iterates the shape with Claude (artifact `sample` + tool), a three-stroke sketch (start profile, end profile, bending) over the 3D view, or auto-relax; exports PDF / `.3dm` / PNG. |
 | Language, runtime, versions | JavaScript (browser, ES modules). three.js 0.160.0, jsPDF 2.5.1 and fflate 0.8.2 from CDN. rhino3dm 8.35.0 (`.js` + `.wasm`) vendored in `vendor/`. Node ≥ 18 for the tests. Python 3 for `build.py`. |
 | Entry point (file or command) | `python3 build.py`, then serve `dist/` over HTTP and open `index.html`. Source lives in `src/page.html`, `src/core.js` and `src/billet.js`. |
 | Inputs (format, units, up-axis) | `.3dm`: the largest closed solid, else the largest surface face, else the first curve becomes the member. Units are read from the file (override in the UI). Z-up. Samples are in mm. |

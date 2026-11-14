@@ -12,7 +12,7 @@ Browser tool for a closed-loop doubly curved timber workflow (LC hackathon). **W
   - Pass means all of these: the billet fits the CNC opening, waste is within the target, and lam R/t is at or above the limit.
 - **Design loop** when it fails:
   - **Ask Claude:** the artifact `sample` capability. Claude gets the shape, the limits and the failure reasons, can call an `evaluate_member` tool that runs the same check, and returns a new centreline, cross-curvature scale and twist scale with its reasoning.
-  - **Sketch:** a pen stroke over the 3D view becomes the new centreline. It is checked first; if it fails, Claude gets the sketch image and keeps its shape.
+  - **Sketch:** three strokes over the 3D view: start profile (blue, the cross-section across the width at the start), end profile (purple) and bending path (orange). Any you skip keep the current member's. With profiles, the new member is a plate swept along the bending path, blending start into end. It is checked first; if it fails, Claude gets the sketch image and keeps its shape.
   - **Auto-relax (no AI):** the smallest morph toward the best-fit billet arc that passes.
   - **Manual edit:** across-width curvature and twist sliders.
 - **Laminations:** layer count and lengths, boards across the width, and how many 2× boards to buy.

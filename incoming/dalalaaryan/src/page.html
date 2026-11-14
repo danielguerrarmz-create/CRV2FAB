@@ -113,7 +113,11 @@ body.mode-member .surface-only{display:none!important} body:not(.mode-member) .m
 #iterNote{font-size:12px;color:var(--ink);margin-top:8px;line-height:1.45}
 body.sketching .legend,body.sketching .verdict{opacity:.25;pointer-events:none}
 #sketch{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;background:rgba(255,122,0,.03)}
-#sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;gap:6px;align-items:center;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px}
+#sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;flex-direction:column;gap:6px;align-items:center;border-radius:14px!important;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px}
+.skrow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;justify-content:center}
+#sketchbar [data-sk] i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px;vertical-align:-1px}
+#sketchbar [data-sk].on{border-color:#1d1d1b;background:#1d1d1b;color:#fff} #sketchbar [data-sk].has:not(.on)::after{content:' ✓';color:var(--ok)}
+#skHint{color:var(--mute);margin-right:4px}
 #sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
 body.route-billet .boards-only{display:none!important} body:not(.route-billet) .billet-only{display:none!important}
 .route{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);padding:3px;border-radius:7px;margin-bottom:10px}
@@ -143,7 +147,7 @@ body.route-billet .boards-only{display:none!important} body:not(.route-billet) .
 #reasons{font-size:12px;margin-top:8px} #reasons ul,#iterNote ul{margin:4px 0 0;padding-left:18px} #reasons li{margin-bottom:4px;color:#7a2a24} #reasons .ok{color:var(--ok);margin:0}
 #iterNote{font-size:12px;color:var(--ink);margin-top:8px;line-height:1.45}
 #sketch{position:absolute;inset:0;width:100%;height:100%;cursor:crosshair;touch-action:none;background:rgba(255,122,0,.03)}
-#sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;gap:6px;align-items:center;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px;white-space:nowrap}
+#sketchbar{position:absolute;left:50%;transform:translateX(-50%);top:58px;display:none;flex-direction:column;gap:6px;align-items:center;border-radius:14px!important;background:rgba(251,250,247,.97);border:1px solid var(--line);border-radius:999px;padding:6px 8px 6px 14px;font-size:12px;white-space:nowrap}
 #sketchbar button{font:500 12px var(--sans);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 11px;cursor:pointer} #sketchbar button.pri{background:#ff7a00;border-color:#ff7a00;color:#fff}
 body.sketching .legend,body.sketching .verdict{opacity:.25;pointer-events:none}
 .slider{display:grid;grid-template-columns:1fr 54px;gap:8px;align-items:center;margin:7px 0;font-size:12.5px}
@@ -215,7 +219,7 @@ body.kind-solid .not-solid{display:none!important}
     <div class="aiout" id="aiOut" style="display:none"></div>
     <button class="btn" id="askAI">Ask Claude for a buildable variant <span class="ext">AI</span></button>
     <button class="btn sec" id="aiStop" style="display:none">Stop Claude</button>
-    <button class="btn sec" id="sketchBtn">Sketch a curve on the view <span class="ext">PEN</span></button>
+    <button class="btn sec" id="sketchBtn">Sketch on the view <span class="ext">START · END · BEND</span></button>
     <button class="btn sec" id="autoRelax">Auto-relax <span class="ext">NO AI</span></button>
     <label class="check"><input type="checkbox" id="pinEnds" checked> Keep end supports fixed</label>
     <div class="surf-only" style="border-top:1px solid var(--line2);margin-top:10px;padding-top:6px">
@@ -223,7 +227,7 @@ body.kind-solid .not-solid{display:none!important}
       <div class="slider"><span>Twist along the member</span><b id="twistV">100%</b><input type="range" id="twist" min="0" max="100" value="100"></div>
       <button class="btn sec" id="manualApply">Apply these as an edit</button>
     </div>
-    <p class="note">The member's centreline is drawn with orange control points. Claude gets the shape, the limits and why it fails, tests candidates with the same check, and returns a new shape with its reasoning. A sketch is checked first; if it fails, Claude gets your sketch image and keeps its shape as far as it can.</p>
+    <p class="note">Sketch with three strokes: the start profile (blue, across the width at the start), the end profile (purple, at the end) and the bending path (orange). Any you skip keep the current member's. The member's centreline is drawn with orange control points. Claude gets the shape, the limits and why it fails, tests candidates with the same check, and returns a new shape with its reasoning. A sketch is checked first; if it fails, Claude gets your sketch image and keeps its shape as far as it can.</p>
   </section>
 
   <section>
@@ -266,7 +270,8 @@ body.kind-solid .not-solid{display:none!important}
     <div class="verdict" id="verdict" style="display:none"><div class="k">This member</div><div class="v" id="vV"></div><div class="d" id="vD"></div></div>
     <div class="legend" id="legend" style="display:none"><div class="t" id="lgT"></div><div class="s" id="lgS"></div><canvas id="lgC" width="600" height="68"></canvas></div>
     <canvas id="sketch" style="display:none"></canvas>
-    <div id="sketchbar"><span>Draw the curve you want over the member</span><button id="skClear">Clear</button><button id="skCancel">Cancel</button><button class="pri" id="skApply">Check my sketch</button></div>
+    <div id="sketchbar"><div class="skrow"><button data-sk="start"><i style="background:#2c6cb0"></i>Start profile</button><button data-sk="end"><i style="background:#7a4fd0"></i>End profile</button><button data-sk="bend" class="on"><i style="background:#ff7a00"></i>Bending</button></div>
+      <div class="skrow"><span id="skHint">Draw the path the member bends along</span><button id="skClear">Clear</button><button id="skCancel">Cancel</button><button class="pri" id="skApply">Check my sketch</button></div></div>
     <div class="busy" id="busy">Working…</div>
   </div>
   <div class="stats" id="stats" style="display:none"></div>
@@ -422,8 +427,9 @@ function deform(base, P, cross, twist){
 }
 
 /* ---------- evaluation ---------- */
-function evaluate(P, cross=1, twist=1, level='medium'){
-  const prm=params(), M=machine(), base=S.base; let pts=[], vol=0, sp, st=null, faces=[], geo=null;
+const curBase=()=>(S.iters[S.cur]&&S.iters[S.cur].base)||S.base;
+function evaluate(P, cross=1, twist=1, level='medium', base=curBase()){
+  const prm=params(), M=machine(); let pts=[], vol=0, sp, st=null, faces=[], geo=null;
   if(base.kind==='curve'){ sp=spineSample(P,120); st=memberStations(sp, prm.memberW, prm.memberD); const g=pieceGeom(st); pts=g.pts; vol=g.vol; }
   else { geo=deform(base, P, cross, twist); sp=geo.sp;
     if(base.kind==='sheet'){ const f=geo.faces[0], N=gridNormals(f.G,f.nu,f.nv), h=prm.memberD/2; let area=0;
@@ -455,7 +461,7 @@ function evaluate(P, cross=1, twist=1, level='medium'){
   if(waste>prm.wasteMax) reasons.push(`CNC waste ${(waste*100).toFixed(0)}% is over the ${(prm.wasteMax*100).toFixed(0)}% target: the billet (${b.width.toFixed(0)} × ${b.depth.toFixed(0)} mm) is much bigger than the member around it, because the member curves in more than one direction.`);
   if(b.cusp) reasons.push('The billet is deeper than its radius allows (a face passes the centre of curvature).');
   const stats=faces.length? Core.summarize(faces, prm) : null;
-  return { P, cross, twist, sp, st, faces, stats, geo, vol, b, cnc, waste, rtOk, ok, status, kap, Rmin:kmax>0?1/kmax:Infinity, len:sp.L, reasons };
+  return { base, P, cross, twist, sp, st, faces, stats, geo, vol, b, cnc, waste, rtOk, ok, status, kap, Rmin:kmax>0?1/kmax:Infinity, len:sp.L, reasons };
 }
 function summarize(ev){ const prm=params(), b=ev.b, o=S.iters[0];
   return { passes:ev.ok, status:BST_L[ev.status], billet_radius_mm:isFinite(b.R)?Math.round(b.R):'straight', lams:`${b.lamCount} x ${prm.lamT} mm`,
@@ -466,14 +472,15 @@ function summarize(ev){ const prm=params(), b=ev.b, o=S.iters[0];
 
 /* ---------- iterations ---------- */
 function pushIter(label, source, P, cross=1, twist=1, extra={}){
-  const ev=evaluate(P, cross, twist, 'medium'), it={ id:S.iters.length, label, source, P:P.map(p=>p.slice()), cross, twist, ev, ...extra };
+  const base=extra.base||curBase(), ev=evaluate(P, cross, twist, 'medium', base), it={ id:S.iters.length, label, source, P:P.map(p=>p.slice()), cross, twist, ev, ...extra, base };
   it.dev=S.iters.length? maxDeviation(ev.sp.pts, S.iters[0].ev.sp.pts) : 0; S.iters.push(it); S.cur=it.id; render(S.iters.length===1); refresh(); return it; }
-function startMember(base){ S.base=base; S.iters=[]; S.cur=-1; document.body.classList.toggle('kind-curve',base.kind==='curve'); document.body.classList.toggle('kind-solid',base.kind==='solid');
+function setKind(base){ document.body.classList.toggle('kind-curve',base.kind==='curve'); document.body.classList.toggle('kind-solid',base.kind==='solid'); $('mKind').textContent={sheet:'Curved plate',solid:'Closed solid',curve:'Centreline + section'}[base.kind]; }
+function startMember(base){ S.base=base; S.iters=[]; S.cur=-1; setKind(base);
   if(base.kind==='curve' && S.map!=='timber'){ S.map='timber'; document.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x.dataset.map==='timber')); }
   $('mKind').textContent={sheet:'Curved plate',solid:'Closed solid',curve:'Centreline + section'}[base.kind];
-  pushIter('Original', base.kind, base.P0); setView('iso'); aiSay(''); }
-function reevaluate(){ if(!S.iters.length) return; busy(true); setTimeout(()=>{ for(const it of S.iters){ it.ev=evaluate(it.P,it.cross,it.twist, it.id===S.cur?'medium':'quick'); it.dev=it.id? maxDeviation(it.ev.sp.pts,S.iters[0].ev.sp.pts):0; } render(false); refresh(); busy(false); },20); }
-function selectIter(id){ S.cur=id; const it=S.iters[id]; if(!it.ev.faces.length && S.base.kind!=='curve') it.ev=evaluate(it.P,it.cross,it.twist,'medium'); render(false); refresh(); }
+  pushIter('Original', base.kind, base.P0, 1, 1, {base}); setView('iso'); aiSay(''); }
+function reevaluate(){ if(!S.iters.length) return; busy(true); setTimeout(()=>{ for(const it of S.iters){ it.ev=evaluate(it.P,it.cross,it.twist, it.id===S.cur?'medium':'quick', it.base); it.dev=it.id? maxDeviation(it.ev.sp.pts,S.iters[0].ev.sp.pts):0; } render(false); refresh(); busy(false); },20); }
+function selectIter(id){ S.cur=id; const it=S.iters[id]; if(!it.ev.faces.length && it.base.kind!=='curve') it.ev=evaluate(it.P,it.cross,it.twist,'medium',it.base); render(false); refresh(); }
 function pinEnds(P, ref){ if(!$('pinEnds').checked) return P; const n=P.length, d0=v3.sub(ref[0],P[0]), d1=v3.sub(ref[ref.length-1],P[n-1]);
   return P.map((p,i)=>{ const t=i/(n-1); return v3.add(p, v3.add(v3.sc(d0,1-t), v3.sc(d1,t))); }); }
 function busy(on){ $('busy').classList.toggle('on',on); }
@@ -499,12 +506,12 @@ function buildPatchGeometry(p, dLo, dHi, solid){ const r=p.res, nu=r.nu, nv=r.nv
 let origEdges=null;
 function memberMeshes(ev, colourFn){ // returns [{geo}] for the member
   const prm=params(), out=[];
-  if(S.base.kind==='curve'){ const st=ev.st, pos=[], col=[], idx=[];
+  if(ev.base.kind==='curve'){ const st=ev.st, pos=[], col=[], idx=[];
     for(let s2=0;s2<4;s2++){ const e1=s2,e2=(s2+1)%4, base=pos.length/3; st.forEach((s,i)=>{ const c=colourFn? colourFn(i) : [0.6,0.6,0.6]; for(const ce of [e1,e2]){ pos.push(s.cr[ce*3],s.cr[ce*3+1],s.cr[ce*3+2]); col.push(...c); } });
       for(let q=0;q<st.length-1;q++){ const v=base+q*2; idx.push(v,v+1,v+3,v,v+3,v+2); } }
     for(const s of [st[0],st[st.length-1]]){ const base=pos.length/3; for(let ce=0;ce<4;ce++){ pos.push(s.cr[ce*3],s.cr[ce*3+1],s.cr[ce*3+2]); col.push(0.55,0.5,0.45); } idx.push(base,base+1,base+2,base,base+2,base+3); }
     const geo=new THREE.BufferGeometry(); geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3)); geo.setIndex(idx); geo.computeVertexNormals(); out.push(geo); return out; }
-  const sheet=S.base.kind==='sheet';
+  const sheet=ev.base.kind==='sheet';
   for(const p of ev.faces){ const g=buildPatchGeometry(p, -prm.memberD/2, prm.memberD/2, sheet), geo=new THREE.BufferGeometry();
     geo.setAttribute('position',new THREE.Float32BufferAttribute(g.pos,3)); const col=new Float32Array(g.sidx.length*3);
     g.sidx.forEach((si,k)=>{ const c=colourFn? sampleColor(p,si) : [0.6,0.6,0.6]; col[k*3]=c[0]; col[k*3+1]=c[1]; col[k*3+2]=c[2]; });
@@ -514,7 +521,7 @@ function render(fit){
   for(const o of memberGroup.children){ o.geometry&&o.geometry.dispose(); } memberGroup.clear();
   const it=S.iters[S.cur]; if(!it) return; const ev=it.ev, prm=params(); S.stats=ev.stats;
   const curveCol=(i)=>{ const u=ev.kap[i]*prm.lamT*prm.rt; return u<=0.8? hex('#3a8f5a') : u<=1? hex('#e0a43a') : ramp(FAILRAMP, Math.min(1,u-1)); };
-  const geos=memberMeshes(ev, S.base.kind==='curve'? curveCol : true); bounds=new THREE.Box3();
+  const geos=memberMeshes(ev, curBase().kind==='curve'? curveCol : true); bounds=new THREE.Box3();
   for(const geo of geos){ memberGroup.add(new THREE.Mesh(geo,SHADE_MAT)); memberGroup.add(new THREE.LineSegments(new THREE.EdgesGeometry(geo,30), new THREE.LineBasicMaterial({color:0x1d1d1b, transparent:true, opacity:0.5}))); geo.computeBoundingBox(); bounds.union(geo.boundingBox); }
   if(it.id===0){ origEdges=geos.map(g=>new THREE.EdgesGeometry(g,30).attributes.position.array.slice()); }
   if($('showBillet').checked){ const R=Billet.billetRings(ev.b,32), bp=[], bi=[], bl=[];
@@ -531,6 +538,7 @@ function render(fit){
   const sg=new THREE.BufferGeometry(); sg.setAttribute('position',new THREE.Float32BufferAttribute(ev.sp.pts.flat(),3)); memberGroup.add(new THREE.Line(sg,new THREE.LineBasicMaterial({color:0xff7a00})));
   const rad=bounds.getSize(new THREE.Vector3()).length()*0.008;
   for(const p of it.P){ const m=new THREE.Mesh(new THREE.SphereGeometry(rad,12,8), new THREE.MeshBasicMaterial({color:0xff7a00})); m.position.set(...p); memberGroup.add(m); }
+  if(S.sketching){ [[it.P[0],0x2c6cb0],[it.P[it.P.length-1],0x7a4fd0]].forEach(([p,c])=>{ const m=new THREE.Mesh(new THREE.SphereGeometry(rad*2.4,16,12), new THREE.MeshBasicMaterial({color:c, transparent:true, opacity:0.75})); m.position.set(...p); memberGroup.add(m); }); }
   if(fit) setView('iso');
 }
 function drawLegend(cv, map){
@@ -549,25 +557,25 @@ function lamInfo(b,prm){ const across=Math.ceil(b.width/(prm.lamStockD-10)), ang
 function interiorRmin(ev){ let m=Infinity; for(const f of ev.faces){ const r=f.res, c=f.cls; for(let j=1;j<r.nv-1;j++) for(let i=1;i<r.nu-1;i++){ const k=j*r.nu+i; if(r.ok[k] && c.R[k]<m) m=c.R[k]; } } return m; }
 /* ---------- UI refresh ---------- */
 function refresh(){
-  const it=S.iters[S.cur]; if(!it) return; const ev=it.ev, b=ev.b, prm=params(), M=machine(), st=ev.stats;
+  const it=S.iters[S.cur]; if(!it) return; setKind(it.base); const ev=it.ev, b=ev.b, prm=params(), M=machine(), st=ev.stats;
   $('empty').style.display='none'; ['views','verdict','legend','stats'].forEach(id=>$(id).style.display='');
   $('Rlam').textContent=fmtM(prm.lamT*prm.rt,2);
   $('vV').textContent=ev.ok?'Buildable':'Not buildable'; $('verdict').classList.toggle('warn',!ev.ok);
   $('vD').textContent=`${it.label} · ${ev.ok?'one billet, '+(ev.waste*100).toFixed(0)+'% waste':BST_L[ev.status].toLowerCase()}`;
-  $('lgT').textContent= S.base.kind==='curve'? 'Member curvature vs lamination limit' : MAP_TITLE[S.map]; $('lgS').textContent= mapSub(S.base.kind==='curve'?'timber':S.map);
-  drawLegend($('lgC'), S.base.kind==='curve'?'timber':S.map);
+  $('lgT').textContent= curBase().kind==='curve'? 'Member curvature vs lamination limit' : MAP_TITLE[S.map]; $('lgS').textContent= mapSub(curBase().kind==='curve'?'timber':S.map);
+  drawLegend($('lgC'), curBase().kind==='curve'?'timber':S.map);
   const area=ev.geo&&ev.geo.area;
-  $('mInfo').textContent= S.base.kind==='curve'? `${(ev.len/1000).toFixed(2)} m long · ${prm.memberW} × ${prm.memberD} mm`
+  $('mInfo').textContent= curBase().kind==='curve'? `${(ev.len/1000).toFixed(2)} m long · ${prm.memberW} × ${prm.memberD} mm`
     : `${(ev.len/1000).toFixed(2)} m along the centreline${area?` · ${(area/1e6).toFixed(2)} m² surface`:''} · ${(ev.vol/1e9).toFixed(3)} m³`;
   const items=[
-    ['Member', `${(ev.len/1000).toFixed(2)} m`, S.base.kind==='curve'? `${prm.memberW} × ${prm.memberD} mm section` : `${(ev.vol/1e9).toFixed(2)} m³ of timber`],
-    ['Tightest bend', S.base.kind==='sheet'? fmtM(interiorRmin(ev),2) : fmtM(ev.Rmin,2), S.base.kind==='sheet'? 'on the plate surface' : 'along the centreline'],
+    ['Member', `${(ev.len/1000).toFixed(2)} m`, curBase().kind==='curve'? `${prm.memberW} × ${prm.memberD} mm section` : `${(ev.vol/1e9).toFixed(2)} m³ of timber`],
+    ['Tightest bend', curBase().kind==='sheet'? fmtM(interiorRmin(ev),2) : fmtM(ev.Rmin,2), curBase().kind==='sheet'? 'on the plate surface' : 'along the centreline'],
     ['Billet radius', isFinite(b.R)?fmtM(b.R,2):'straight', `${b.lamCount} × ${prm.lamT} mm lams`],
     ['Billet W × D × L', `${b.width.toFixed(0)} × ${b.depth.toFixed(0)}`, `mm · ${(b.length/1000).toFixed(2)} m long`],
     ['CNC fit', ev.cnc.fits?`${ev.cnc.best.margin.toFixed(0)} mm spare`:`short ${(-ev.cnc.best.margin).toFixed(0)} mm`, `${b.cncInPlane.toFixed(0)} × ${b.width.toFixed(0)} into ${M.w} × ${M.h}`, ev.cnc.fits?'ok':'bad'],
     ['CNC waste', `${(ev.waste*100).toFixed(0)}%`, `target ≤ ${(prm.wasteMax*100).toFixed(0)}%`, ev.waste>prm.wasteMax?'bad':'ok'],
     ['Tightest lam', isFinite(b.rLam)?`R/t ${fmtRt(b.rLam/prm.lamT)}`:'straight', `limit ${prm.rt}`, ev.rtOk?'ok':'bad'],
-    ['Change from original', `${it.dev.toFixed(0)} mm`, S.base.kind==='curve'? 'max centreline move' : `centreline · across ${(it.cross*100).toFixed(0)}% · twist ${(it.twist*100).toFixed(0)}%`] ];
+    ['Change from original', `${it.dev.toFixed(0)} mm`, curBase().kind==='curve'? 'max centreline move' : `centreline · across ${(it.cross*100).toFixed(0)}% · twist ${(it.twist*100).toFixed(0)}%`] ];
   $('stats').innerHTML=items.map(([k,v,d,c])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="d">${d}</div></div>`).join('');
   $('iters').innerHTML=S.iters.map(x=>`<div class="iter ${x.id===S.cur?'on':''}" data-it="${x.id}"><span class="dot" style="background:${x.ev.ok?'#3a8f5a':'#c94040'}"></span><b>${x.label}</b><span>${x.ev.ok?'buildable':BST_L[x.ev.status].toLowerCase()} · ${(x.ev.waste*100).toFixed(0)}% waste · Δ ${x.dev.toFixed(0)} mm</span></div>`).join('');
   document.querySelectorAll('[data-it]').forEach(el=>el.onclick=()=>selectIter(+el.dataset.it));
@@ -585,7 +593,7 @@ function refresh(){
 
 /* ---------- auto-relax ---------- */
 function autoRelax(){
-  const base=S.iters[S.cur], P=base.P, b=base.ev.b, n=P.length, ref=S.iters[0].P, surf=S.base.kind!=='curve';
+  const base=S.iters[S.cur], P=base.P, b=base.ev.b, n=P.length, ref=S.iters[0].P, surf=curBase().kind!=='curve';
   const to3=(p2,w)=>[b.origin[0]+p2[0]*b.u[0]+p2[1]*b.v[0]+w*b.n[0], b.origin[1]+p2[0]*b.u[1]+p2[1]*b.v[1]+w*b.n[1], b.origin[2]+p2[0]*b.u[2]+p2[1]*b.v[2]+w*b.n[2]];
   const dMid=(b.ext.dLow+b.ext.dHigh)/2, wMid=(b.ext.wLow+b.ext.wHigh)/2;
   const A=P.map(p=>{ const r=v3.sub(p,b.origin), s=b.spine.project([v3.dot(r,b.u),v3.dot(r,b.v)])[0]; return to3(b.spine.point(s,dMid),wMid); });
@@ -608,14 +616,14 @@ function aiSay(t,cls){ const el=$('aiOut'); el.textContent=t; el.className='aiou
 function clamp01(x,d){ x=Number(x); return isFinite(x)? Math.min(1,Math.max(0,x)) : d; }
 function sanitizeP(raw){ if(!Array.isArray(raw)||raw.length<3||raw.length>16) throw new Error('control_points must be 3–16 [x,y,z] points');
   return raw.map(p=>{ if(!Array.isArray(p)||p.length<3) throw new Error('each point needs [x,y,z]'); const q=p.slice(0,3).map(Number); if(q.some(v=>!isFinite(v)||Math.abs(v)>1e6)) throw new Error('coordinates must be finite mm values'); return q; }); }
-function memberDescription(){ const prm=params(), k=S.base.kind;
+function memberDescription(){ const prm=params(), k=curBase().kind;
   if(k==='curve') return `The member is a ${prm.memberW} x ${prm.memberD} mm rectangular glulam section swept along its centreline.`;
   if(k==='sheet') return `The member is a curved plate (a surface thickened ${prm.memberD} mm). Its shape is controlled by: the centreline control points (the plate's cross-sections ride along this curve); cross_scale 0-1 (how curved the plate is ACROSS its width: 1 = as designed, 0 = straight across); twist_scale 0-1 (how much the plate twists along its length: 1 = as designed, 0 = untwisted).`;
   return 'The member is a closed solid. Its cross-sections ride along the centreline control points; twist_scale 0-1 scales how much it twists along its length (1 = as designed).'; }
 async function askClaude(){
   const sample=await getSample();
   if(!sample){ aiSay('Claude isn’t available in this view (open the published page in claude.ai). Running Auto-relax instead.','warn'); autoRelax(); return; }
-  const base=S.iters[S.cur], prm=params(), M=machine(), orig=S.iters[0], k=S.base.kind;
+  const base=S.iters[S.cur], prm=params(), M=machine(), orig=S.iters[0], k=base.base.kind, mbase=base.base;
   const lim=await sample.limits().catch(()=>null), useTools=!!(lim&&lim.tools), canImg=!!(lim&&lim.images&&base.sketchBlob);
   const r=(P)=>P.map(p=>p.map(v=>Math.round(v)));
   const history=S.iters.map(x=>({label:x.label, passes:x.ev.ok, waste_pct:Math.round(x.ev.waste*100), cnc_margin_mm:Math.round(x.ev.cnc.best.margin), lam_R_over_t:isFinite(x.ev.b.rLam)?Math.round(x.ev.b.rLam/prm.lamT):null, deviation_mm:Math.round(x.dev), cross_scale:x.cross, twist_scale:x.twist}));
@@ -630,7 +638,7 @@ ${memberDescription()} Units mm, Z up.
 ORIGINAL design (designer intent): control_points ${JSON.stringify(r(orig.P))}${k!=='curve'?`, cross_scale 1, twist_scale 1`:''}
 CURRENT candidate "${base.label}": control_points ${JSON.stringify(r(base.P))}${k!=='curve'?`, cross_scale ${base.cross}, twist_scale ${base.twist}`:''}
 Current analysis: ${JSON.stringify(summarize(base.ev))}
-${base.source==='sketch'?`The current candidate is the DESIGNER'S OWN SKETCH${canImg?' (the attached image shows the 3D view with their orange pen stroke over the member)':''}. Treat it as the intent to preserve and change it as little as possible.`:''}
+${base.source==='sketch'?`The current candidate is the DESIGNER'S OWN SKETCH${base.sketchParts&&base.sketchParts.length?` (they drew: ${base.sketchParts.join(', ')})`:''}${canImg?'. The attached image shows the 3D view with their strokes: blue = start profile (cross-section at the start), purple = end profile (cross-section at the end), orange = bending path':''}. Treat it as the intent to preserve and change it as little as possible.`:''}
 Attempts so far: ${JSON.stringify(history)}
 ${$('pinEnds').checked?`Keep the first and last control points fixed (supports): ${JSON.stringify(r([orig.P[0],orig.P[orig.P.length-1]]))}.`:'End points may move.'}
 
@@ -642,45 +650,77 @@ Reply with ONLY JSON: {"control_points": [[x,y,z], ...] (4 to 9 points, mm)${k==
   const tools=useTools? [{ name:'evaluate_member', description:'Run the real fabrication check (billet fit, CNC opening, waste, lamination R/t) on a candidate shape. Input control_points: 4-9 [x,y,z] points in mm'+(k==='sheet'?'; cross_scale 0-1':'')+(k!=='curve'?'; twist_scale 0-1':'')+'. Returns passes, reasons, billet size, CNC margin, waste and deviation from the original.',
     inputSchema:{type:'object', properties:props, required:['control_points']},
     execute:(inp)=>{ const P=pinEnds(sanitizeP(inp.control_points), orig.P), c=k==='sheet'?clamp01(inp.cross_scale,base.cross):1, t=k!=='curve'?clamp01(inp.twist_scale,base.twist):1;
-      const ev=evaluate(P,c,t,'quick'); tests++; aiSay(`Claude is testing variant ${tests}… ${ev.ok?'it passes':'fails: '+BST_L[ev.status].toLowerCase()}`); return summarize(ev); } }] : undefined;
+      const ev=evaluate(P,c,t,'quick',mbase); tests++; aiSay(`Claude is testing variant ${tests}… ${ev.ok?'it passes':'fails: '+BST_L[ev.status].toLowerCase()}`); return summarize(ev); } }] : undefined;
   try{
     const res=await sample.json(prompt,{ tools, images: canImg?[base.sketchBlob]:undefined, modelTier:'default', signal:aiCtl.signal, ...(useTools?{}:{cache:false}) });
     const P=pinEnds(sanitizeP(res&&res.control_points), orig.P), c=k==='sheet'?clamp01(res.cross_scale,base.cross):1, t=k!=='curve'?clamp01(res.twist_scale,base.twist):1;
     const n=S.iters.filter(x=>x.source==='claude').length+1;
-    const it=pushIter(`Claude #${n}`,'claude',P,c,t,{ rationale:String(res.rationale||'').slice(0,600), changes:Array.isArray(res.changes)?res.changes.slice(0,6).map(x=>String(x).slice(0,160)):[] });
+    const it=pushIter(`Claude #${n}`,'claude',P,c,t,{ base:mbase, rationale:String(res.rationale||'').slice(0,600), changes:Array.isArray(res.changes)?res.changes.slice(0,6).map(x=>String(x).slice(0,160)):[] });
     aiSay(it.ev.ok? `Claude’s variant passes${tests?` (it tested ${tests} candidate${tests>1?'s':''} first)`:''}. Sketch over it to steer further, or keep it.` : 'Claude’s variant still fails. Ask again, sketch your own, or try Auto-relax.', it.ev.ok?'ok':'warn');
   }catch(e){ const c=e&&e.code;
     aiSay(c==='cancelled'?'Stopped.' : c==='not_granted'||c==='sampling_disabled'?'Claude isn’t allowed for this page. Use Auto-relax.' : c==='rate_limited'?'Too many requests right now. Try again in a little while.' : c==='invalid_json'?'Claude’s reply couldn’t be read as a shape. Try again.' : 'Claude couldn’t finish: '+((e&&e.message)||e), 'warn');
   } finally { S.aiBusy=false; aiCtl=null; $('aiStop').style.display='none'; refresh(); }
 }
 
-/* ---------- sketch ---------- */
-const sk={ pts:[], drawing:false };
-function sketchMode(on){ S.sketching=on; document.body.classList.toggle('sketching',on); $('sketch').style.display=on?'':'none'; $('sketchbar').style.display=on?'flex':'none'; controls.enabled=!on; sk.pts=[]; drawSketch(); }
+/* ---------- sketch: start profile, end profile, bending ---------- */
+const SK_COL={start:'#2c6cb0', end:'#7a4fd0', bend:'#ff7a00'}, SK_HINT={start:'Draw the cross-section at the START (across the width)', end:'Draw the cross-section at the END (across the width)', bend:'Draw the path the member bends along'};
+const sk={ tool:'bend', strokes:{start:[], end:[], bend:[]}, drawing:false };
+function setTool(t){ sk.tool=t; document.querySelectorAll('[data-sk]').forEach(b=>{ b.classList.toggle('on',b.dataset.sk===t); b.classList.toggle('has',sk.strokes[b.dataset.sk].length>1); }); $('skHint').textContent=SK_HINT[t]; }
+function sketchMode(on){ S.sketching=on; document.body.classList.toggle('sketching',on); $('sketch').style.display=on?'':'none'; $('sketchbar').style.display=on?'flex':'none'; controls.enabled=!on;
+  sk.strokes={start:[], end:[], bend:[]}; setTool('bend'); drawSketch(); if(S.iters.length) render(false); }
 function drawSketch(){ const c=$('sketch'), r=c.getBoundingClientRect(), dpr=window.devicePixelRatio||1; c.width=Math.max(1,r.width*dpr); c.height=Math.max(1,r.height*dpr); const x=c.getContext('2d'); x.scale(dpr,dpr);
-  x.clearRect(0,0,r.width,r.height); if(sk.pts.length<2) return; x.strokeStyle='#ff7a00'; x.lineWidth=4; x.lineCap='round'; x.lineJoin='round'; x.beginPath(); x.moveTo(sk.pts[0][0],sk.pts[0][1]); for(const p of sk.pts) x.lineTo(p[0],p[1]); x.stroke(); }
+  x.clearRect(0,0,r.width,r.height); x.lineCap='round'; x.lineJoin='round';
+  for(const k of ['start','end','bend']){ const pts=sk.strokes[k]; if(pts.length<2) continue; x.strokeStyle=SK_COL[k]; x.lineWidth=k===sk.tool?5:3.5; x.beginPath(); x.moveTo(pts[0][0],pts[0][1]); for(const p of pts) x.lineTo(p[0],p[1]); x.stroke(); } }
 (()=>{ const c=$('sketch'), at=(e)=>{ const r=c.getBoundingClientRect(); return [e.clientX-r.left,e.clientY-r.top]; };
-  c.addEventListener('pointerdown',e=>{ sk.drawing=true; sk.pts=[at(e)]; c.setPointerCapture(e.pointerId); drawSketch(); });
-  c.addEventListener('pointermove',e=>{ if(!sk.drawing) return; const p=at(e), l=sk.pts[sk.pts.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])>3){ sk.pts.push(p); drawSketch(); } });
-  c.addEventListener('pointerup',()=>{ sk.drawing=false; }); })();
+  c.addEventListener('pointerdown',e=>{ sk.drawing=true; sk.strokes[sk.tool]=[at(e)]; c.setPointerCapture(e.pointerId); drawSketch(); });
+  c.addEventListener('pointermove',e=>{ if(!sk.drawing) return; const pts=sk.strokes[sk.tool], p=at(e), l=pts[pts.length-1]; if(Math.hypot(p[0]-l[0],p[1]-l[1])>3){ pts.push(p); drawSketch(); } });
+  c.addEventListener('pointerup',()=>{ sk.drawing=false; setTool(sk.tool); });
+  document.querySelectorAll('[data-sk]').forEach(b=>b.onclick=()=>{ setTool(b.dataset.sk); drawSketch(); }); })();
+/* screen stroke -> N evenly spaced 3D points on the view plane through `anchor` */
+function strokeTo3D(pts, N, anchor){ const c=$('sketch'), r=c.getBoundingClientRect();
+  const cum=[0]; for(let i=1;i<pts.length;i++) cum.push(cum[i-1]+Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]));
+  const L=cum[cum.length-1], dir=new THREE.Vector3(); camera.getWorldDirection(dir);
+  const plane=new THREE.Plane().setFromNormalAndCoplanarPoint(dir, new THREE.Vector3(...anchor)), out=new THREE.Vector3(), P=[]; let j=1;
+  for(let k=0;k<N;k++){ const s=L*k/(N-1); while(j<pts.length-1&&cum[j]<s) j++; const f=(s-cum[j-1])/((cum[j]-cum[j-1])||1);
+    const x=pts[j-1][0]+(pts[j][0]-pts[j-1][0])*f, y=pts[j-1][1]+(pts[j][1]-pts[j-1][1])*f;
+    ray.setFromCamera(new THREE.Vector2(x/r.width*2-1, -(y/r.height)*2+1), camera); if(ray.ray.intersectPlane(plane,out)) P.push([out.x,out.y,out.z]); }
+  return P; }
+/* a 3D profile -> local [b, n] across-the-width coordinates in the frame (B, N) at a spine end, centred on its midpoint */
+function toLocal(prof, B, N, nv){ const pts=resampleLen(prof, nv).pts, mid=v3.sc(pts.reduce((a,p)=>v3.add(a,p),[0,0,0]),1/pts.length);
+  let L=pts.map(p=>{ const d=v3.sub(p,mid); return [v3.dot(d,B), v3.dot(d,N)]; }); if(L[0][0]>L[L.length-1][0]) L=L.reverse(); return L; }
+function sweepBase(Pb, profS, profE, name){
+  const nu=60, nv=15, sp=spineSample(Pb, nu), C=sp.pts, T=tangents(C), N=rmfNormals(C,T), B=C.map((c,i)=>v3.nrm(v3.cr(T[i],N[i])));
+  const ps=toLocal(profS, B[0], N[0], nv), pe=toLocal(profE, B[nu-1], N[nu-1], nv), G=new Float64Array(nu*nv*3); let wS=0;
+  for(let i=0;i<nu;i++){ const t=i/(nu-1); for(let j=0;j<nv;j++){ const b=ps[j][0]+(pe[j][0]-ps[j][0])*t, n=ps[j][1]+(pe[j][1]-ps[j][1])*t, p=v3.add(v3.add(C[i],v3.sc(B[i],b)),v3.sc(N[i],n)), o=(i*nv+j)*3; G[o]=p[0]; G[o+1]=p[1]; G[o+2]=p[2]; } }
+  for(let j=1;j<nv;j++) wS+=Math.hypot(ps[j][0]-ps[j-1][0],ps[j][1]-ps[j-1][1]);
+  return makeBase('sheet',[{G,nu,nv,rev:false,len:sp.L,area:sp.L*wS}],null,name); }
+function currentProfile(ev, end){ // the member's own cross-section at an end (plates only)
+  if(!ev.geo || ev.base.kind!=='sheet') return null; const f=ev.geo.faces[0], i=end? f.nu-1 : 0, out=[];
+  for(let j=0;j<f.nv;j++){ const o=(i*f.nv+j)*3; out.push([f.G[o],f.G[o+1],f.G[o+2]]); } return out; }
 async function applySketch(){
-  if(sk.pts.length<5){ aiSay('Draw a longer stroke over the member first.','warn'); return; }
-  const base=S.iters[S.cur], c=$('sketch'), r=c.getBoundingClientRect();
-  const cum=[0]; for(let i=1;i<sk.pts.length;i++) cum.push(cum[i-1]+Math.hypot(sk.pts[i][0]-sk.pts[i-1][0],sk.pts[i][1]-sk.pts[i-1][1]));
-  const N=Math.max(7, base.P.length), L=cum[cum.length-1], scr=[]; let j=1;
-  for(let k=0;k<N;k++){ const s=L*k/(N-1); while(j<sk.pts.length-1&&cum[j]<s) j++; const f=(s-cum[j-1])/((cum[j]-cum[j-1])||1); scr.push([sk.pts[j-1][0]+(sk.pts[j][0]-sk.pts[j-1][0])*f, sk.pts[j-1][1]+(sk.pts[j][1]-sk.pts[j-1][1])*f]); }
-  const cen=base.P.reduce((a,p)=>v3.add(a,v3.sc(p,1/base.P.length)),[0,0,0]), dir=new THREE.Vector3(); camera.getWorldDirection(dir);
-  const plane=new THREE.Plane().setFromNormalAndCoplanarPoint(dir, new THREE.Vector3(...cen)), out=new THREE.Vector3(), P=[];
-  for(const [x,y] of scr){ ray.setFromCamera(new THREE.Vector2(x/r.width*2-1, -(y/r.height)*2+1), camera); if(ray.ray.intersectPlane(plane,out)) P.push([out.x,out.y,out.z]); }
-  if(P.length<4){ aiSay('Couldn’t place the sketch in 3D. Try again from another view.','warn'); return; }
+  const st=sk.strokes, has=(k)=>st[k].length>=5, base=S.iters[S.cur], ref=S.iters[0].P;
+  if(!has('start')&&!has('end')&&!has('bend')){ aiSay('Draw at least one stroke first: start profile, end profile or bending.','warn'); return; }
+  // bending path
+  let Pb=base.P;
+  if(has('bend')){ const cen=base.P.reduce((a,p)=>v3.add(a,v3.sc(p,1/base.P.length)),[0,0,0]); let P=strokeTo3D(st.bend, Math.max(7,base.P.length), cen);
+    if(P.length<4){ aiSay('Couldn’t place the bending stroke in 3D. Try another view.','warn'); return; }
+    const e0=v3.len(v3.sub(P[0],base.P[0]))+v3.len(v3.sub(P[P.length-1],base.P[base.P.length-1])), e1=v3.len(v3.sub(P[P.length-1],base.P[0]))+v3.len(v3.sub(P[0],base.P[base.P.length-1]));
+    if(e1<e0) P=P.slice().reverse(); Pb=pinEnds(P,ref); }
+  // profiles
+  let profS=has('start')? strokeTo3D(st.start, 15, Pb[0]) : null, profE=has('end')? strokeTo3D(st.end, 15, Pb[Pb.length-1]) : null;
+  const parts=[has('start')&&'start profile', has('end')&&'end profile', has('bend')&&'bending path'].filter(Boolean);
   const img=new Image(); img.src=renderer.domElement.toDataURL('image/png'); await img.decode();
-  const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height; const x=cv.getContext('2d'); x.drawImage(img,0,0); x.drawImage(c,0,0,img.width,img.height);
-  const blob=await new Promise(res=>cv.toBlob(res,'image/png'));
-  sketchMode(false);
-  let Pp=P; const e0=v3.len(v3.sub(P[0],base.P[0]))+v3.len(v3.sub(P[P.length-1],base.P[base.P.length-1])), e1=v3.len(v3.sub(P[P.length-1],base.P[0]))+v3.len(v3.sub(P[0],base.P[base.P.length-1]));
-  if(e1<e0) Pp=P.slice().reverse();
-  const n=S.iters.filter(x=>x.source==='sketch').length+1;
-  const it=pushIter(`Sketch #${n}`,'sketch',pinEnds(Pp,S.iters[0].P),base.cross,base.twist,{ sketchBlob:blob, rationale:'Your sketch, projected onto the view plane through the member'+($('pinEnds').checked?', with the end supports kept.':'.') });
+  const cv=document.createElement('canvas'); cv.width=img.width; cv.height=img.height; const x=cv.getContext('2d'); x.drawImage(img,0,0); x.drawImage($('sketch'),0,0,img.width,img.height);
+  const blob=await new Promise(res=>cv.toBlob(res,'image/png')); sketchMode(false);
+  const n=S.iters.filter(i=>i.source==='sketch').length+1; let it;
+  if(profS||profE){
+    if(!profS) profS=currentProfile(base.ev,false)||profE; if(!profE) profE=currentProfile(base.ev,true)||profS;
+    const nb=sweepBase(Pb, profS, profE, `Sketch #${n}`);
+    it=pushIter(`Sketch #${n}`,'sketch',nb.P0,1,1,{ base:nb, sketchBlob:blob, sketchParts:parts,
+      rationale:`Built from your ${parts.join(', ')}: the start profile blends into the end profile along the bending path, as a ${params().memberD} mm plate${has('bend')&&$('pinEnds').checked?', with the end supports kept':''}.` });
+  } else {
+    it=pushIter(`Sketch #${n}`,'sketch',Pb,base.cross,base.twist,{ sketchBlob:blob, sketchParts:parts, rationale:'Your bending path, projected onto the view plane through the member'+($('pinEnds').checked?', with the end supports kept.':'.') });
+  }
   aiSay(it.ev.ok? 'Your sketch passes as drawn.' : 'Your sketch doesn’t pass yet. Ask Claude to make it buildable while keeping its shape, or sketch again.', it.ev.ok?'ok':'warn');
 }
 
@@ -751,11 +791,11 @@ $('exPng').onclick=guard(async()=>{ const it=S.iters[S.cur], W=2400, H=1600, img
 function build3dm(){ const rh=S.rh, doc=new rh.File3dm(); doc.settings().modelUnitSystem=rh.UnitSystem.Millimeters; const lt=doc.layers(), prm=params();
   const lay=(n,c)=>{ try{ return lt.addLayer(n,c); }catch(e){ return -1; } };
   const meshFrom=(geo)=>{ const m=new rh.Mesh(), p=geo.attributes.position, idx=geo.index.array; for(let i=0;i<p.count;i++) m.vertices().add(p.getX(i),p.getY(i),p.getZ(i)); for(let i=0;i<idx.length;i+=3) m.faces().addTriFace(idx[i],idx[i+1],idx[i+2]); m.normals().computeNormals(); return m; };
-  for(const it of S.iters){ if(!it.ev.faces.length && S.base.kind!=='curve') it.ev=evaluate(it.P,it.cross,it.twist,'medium');
+  for(const it of S.iters){ if(!it.ev.faces.length && it.base.kind!=='curve') it.ev=evaluate(it.P,it.cross,it.twist,'medium',it.base);
     const L=lay(`${String(it.id).padStart(2,'0')} ${it.label}${it.ev.ok?' - buildable':' - fails'}`, it.ev.ok?{r:58,g:143,b:90,a:255}:{r:200,g:68,b:60,a:255});
     const at=(name)=>{ const a=new rh.ObjectAttributes(); a.name=name; if(L>=0) a.layerIndex=L; return a; };
     doc.objects().add(rh.NurbsCurve.create(false,3,it.ev.sp.pts), at(`${it.label} centreline`));
-    memberMeshes(it.ev,null).forEach((g,i)=>{ doc.objects().addMesh(meshFrom(g), at(`${it.label} member${S.base.kind==='sheet'?` (${prm.memberD} mm thick)`:''}${i?' face '+(i+1):''}`)); g.dispose(); });
+    memberMeshes(it.ev,null).forEach((g,i)=>{ doc.objects().addMesh(meshFrom(g), at(`${it.label} member${it.base.kind==='sheet'?` (${prm.memberD} mm thick)`:''}${i?' face '+(i+1):''}`)); g.dispose(); });
     const R=Billet.billetRings(it.ev.b,32), bm=new rh.Mesh(); for(let f=0;f<4;f++){ const base=bm.vertices().count; for(const ring of R){ bm.vertices().add(...ring[f]); bm.vertices().add(...ring[(f+1)%4]); } for(let q=0;q<R.length-1;q++){ const v=base+q*2; bm.faces().addTriFace(v,v+1,v+3); bm.faces().addTriFace(v,v+3,v+2); } }
     for(const ring of [R[0],R[R.length-1]]){ const base=bm.vertices().count; for(let f=0;f<4;f++) bm.vertices().add(...ring[f]); bm.faces().addTriFace(base,base+1,base+2); bm.faces().addTriFace(base,base+2,base+3); }
     bm.normals().computeNormals(); const b=it.ev.b; doc.objects().addMesh(bm, at(`${it.label} billet R ${isFinite(b.R)?b.R.toFixed(0):'straight'} ${b.lamCount}x${b.lamT} ${b.width.toFixed(0)}x${b.depth.toFixed(0)}`)); }
@@ -773,7 +813,7 @@ $('exPdf').onclick=guard(async()=>{ const { jsPDF }=window.jspdf, it=S.iters[S.c
   pdf.addImage(snapshot(1500,1000),'JPEG',10,22,165,110); pdf.setDrawColor(220,216,207); pdf.rect(10,22,165,110);
   pdf.setTextColor(...(ev.ok?[58,143,90]:[201,64,64])); pdf.setFont('helvetica','bold'); pdf.setFontSize(18); pdf.text(ev.ok?'Buildable':'Not buildable',185,30);
   let y=38; const row=(k,v,bad)=>{ pdf.setFont('helvetica','normal'); pdf.setFontSize(8.5); pdf.setTextColor(107,106,101); pdf.text(k,185,y); pdf.setFont('courier','bold'); pdf.setTextColor(...(bad?[201,64,64]:[29,29,27])); pdf.text(String(v),287,y,{align:'right'}); y+=5.2; };
-  row('Member', S.base.kind==='curve'? `${(ev.len/1000).toFixed(2)} m, ${prm.memberW} x ${prm.memberD} mm` : `${(ev.len/1000).toFixed(2)} m, ${prm.memberD} mm thick`);
+  row('Member', curBase().kind==='curve'? `${(ev.len/1000).toFixed(2)} m, ${prm.memberW} x ${prm.memberD} mm` : `${(ev.len/1000).toFixed(2)} m, ${prm.memberD} mm thick`);
   row('Billet radius', isFinite(b.R)?(b.R/1000).toFixed(2)+' m':'straight'); row('Laminations', `${b.lamCount} x ${prm.lamT} mm (R/t ${isFinite(b.rLam)?fmtRt(b.rLam/prm.lamT):'-'}, limit ${prm.rt})`, !ev.rtOk);
   row('Billet W x D x L', `${b.width.toFixed(0)} x ${b.depth.toFixed(0)} x ${b.length.toFixed(0)} mm`); row('CNC opening / fit', `${M.w} x ${M.h} mm / ${ev.cnc.fits?ev.cnc.best.margin.toFixed(0)+' mm spare':'short '+(-ev.cnc.best.margin).toFixed(0)+' mm'}`, !ev.cnc.fits);
   row('CNC waste', `${(ev.waste*100).toFixed(0)} % (target ${(prm.wasteMax*100).toFixed(0)} %)`, ev.waste>prm.wasteMax); row('Change from original', `${it.dev.toFixed(0)} mm`);
@@ -803,10 +843,10 @@ let tmr=null; const deb=(fn)=>{ clearTimeout(tmr); tmr=setTimeout(fn,300); };
 $('units').addEventListener('change',()=>{ if(S.srcDoc) buildFromDoc(); });
 ['showBillet','showOrig'].forEach(id=>$(id).addEventListener('change',()=>render(false)));
 ['cross','twist'].forEach(id=>$(id).addEventListener('input',()=>{ $(id+'V').textContent=$(id).value+'%'; }));
-$('manualApply').onclick=()=>{ const it=S.iters[S.cur]; pushIter(`Edit #${S.iters.filter(x=>x.source==='manual').length+1}`,'manual',it.P,S.base.kind==='sheet'?+$('cross').value/100:1,+$('twist').value/100,{rationale:`Across-width curvature ${$('cross').value}% and twist ${$('twist').value}% of the design.`}); };
+$('manualApply').onclick=()=>{ const it=S.iters[S.cur]; pushIter(`Edit #${S.iters.filter(x=>x.source==='manual').length+1}`,'manual',it.P,curBase().kind==='sheet'?+$('cross').value/100:1,+$('twist').value/100,{rationale:`Across-width curvature ${$('cross').value}% and twist ${$('twist').value}% of the design.`}); };
 $('askAI').onclick=()=>askClaude(); $('aiStop').onclick=()=>aiCtl&&aiCtl.abort();
 $('autoRelax').onclick=()=>{ busy(true); setTimeout(()=>{ autoRelax(); busy(false); const ok=S.iters[S.cur].ev.ok; aiSay(ok?'Auto-relax found a buildable variant.':'Auto-relax couldn’t find one with these settings.', ok?'ok':'warn'); },20); };
-$('sketchBtn').onclick=()=>sketchMode(true); $('skApply').onclick=()=>applySketch(); $('skClear').onclick=()=>{ sk.pts=[]; drawSketch(); }; $('skCancel').onclick=()=>sketchMode(false);
+$('sketchBtn').onclick=()=>sketchMode(true); $('skApply').onclick=()=>applySketch(); $('skClear').onclick=()=>{ sk.strokes[sk.tool]=[]; setTool(sk.tool); drawSketch(); }; $('skCancel').onclick=()=>sketchMode(false);
 </script>
 </body>
 </html>
