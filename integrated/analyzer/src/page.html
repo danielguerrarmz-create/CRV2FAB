@@ -162,6 +162,7 @@ body.route-billet .boards-only{display:none!important} body:not(.route-billet) .
   <section id="objSec" style="display:none">
     <h2>Objects <span class="tag" id="objCount"></span></h2>
     <div class="objlist" id="objlist"></div>
+    <p class="note" id="trimNote" style="display:none"></p>
     <div class="field wide" style="margin-top:10px"><label>Model units</label>
       <select id="units"><option value="auto">From file</option><option value="1">Millimetres</option><option value="10">Centimetres</option><option value="1000">Metres</option><option value="25.4">Inches</option><option value="304.8">Feet</option></select></div>
   </section>
@@ -435,7 +436,8 @@ async function loadFile(file){
       if(t===rh.ObjectType.Brep || t===rh.ObjectType.Extrusion){
         const br = t===rh.ObjectType.Brep ? g : g.toBrep(true);
         const fs=br.faces();
-        for(let f=0;f<fs.count;f++){ const face=fs.get(f); patches.push(makePatch(fs.count>1?`${base} · face ${f+1}`:base, t===rh.ObjectType.Brep?'Polysurface':'Extrusion', face, face.orientationIsReversed)); }
+        for(let f=0;f<fs.count;f++){ const face=fs.get(f); const pt=makePatch(fs.count>1?`${base} · face ${f+1}`:base, t===rh.ObjectType.Brep?'Polysurface':'Extrusion', face, face.orientationIsReversed);
+          pt.trimmed=Helpers.faceIsTrimmed(face)===true; patches.push(pt); } // still analysed untrimmed; flagged in the UI (DEBT)
         patches[patches.length-1] && (patches[patches.length-1].brepRef=br);
       } else if(t===rh.ObjectType.Surface){
         patches.push(makePatch(base, 'Surface', g, false));
@@ -497,13 +499,10 @@ function classifyAll(){
 function computeStrips(p, prm){
   const r=p.res, nu=r.nu, nv=r.nv, b=Core.stockDims(prm).b, alongU=p.cls.dir==='u';
   const nL=alongU?nu:nv, nT=alongU?nv:nu, id=(l,t)=>alongU?(t*nu+l):(l*nu+t);
-  const strip=new Int32Array(nu*nv), sArr=new Float64Array(nu*nv); let maxS=0, spacing=0, cnt=0;
-  for(let l=0;l<nL;l++){ let s=0;
-    for(let t=0;t<nT;t++){ const i=id(l,t);
-      if(t>0){ const j=id(l,t-1); const d=Math.hypot(r.P[i*3]-r.P[j*3],r.P[i*3+1]-r.P[j*3+1],r.P[i*3+2]-r.P[j*3+2]); s+=d; spacing+=d; cnt++; }
-      sArr[i]=s; strip[i]=Math.floor(s/b); }
-    maxS=Math.max(maxS,s); }
-  p.strip=strip; p.bandOK = b >= 1.6*(spacing/(cnt||1)); p.sArr=sArr; p.nL=nL; p.nT=nT; p.alongU=alongU;
+  // integration fix 4: width measured perpendicular to the member, not along the transverse isocurve
+  const tc=Helpers.transverseCoords(r.P,nu,nv,alongU), sArr=tc.sArr, maxS=tc.maxS, strip=new Int32Array(nu*nv);
+  for(let i=0;i<nu*nv;i++) strip[i]=Math.floor(sArr[i]/b);
+  p.strip=strip; p.bandOK = b >= 1.6*tc.meanSpacing; p.sArr=sArr; p.nL=nL; p.nT=nT; p.alongU=alongU;
   p.boardCount=Math.ceil(maxS/b); p.seams=[];
   const nSeam=Math.floor(maxS/b), step=Math.max(1,Math.ceil(nSeam/90)); p.seamStep=step;
   for(let k=step;k<=nSeam;k+=step){ const target=k*b, line=[];
@@ -653,18 +652,9 @@ function evalBillet(run,a,e,prm,M,level){
 }
 /* Greedy segmentation: longest piece from the current start whose billet fits the CNC opening and the waste target. */
 function segmentRun(run,prm,M){
-  const Lmin=Math.min(800, run.Ltot), cuts=[0], fits=[]; let a=0;
-  const Lmax=M.L? M.L-200 : Infinity;
-  while(a<run.Ltot-1){
-    const end=Math.min(run.Ltot, a+Lmax);
-    let r=evalBillet(run,a,end,prm,M,'quick'); if(r.ok){ cuts.push(end); fits.push(r); a=end; continue; }
-    const lo=Math.min(a+Lmin,end), rlo=evalBillet(run,a,lo,prm,M,'quick');
-    if(!rlo.ok){ cuts.push(lo); fits.push(rlo); a=lo; continue; }
-    let best=lo, bestR=rlo, hi=end;
-    while(hi-best>Math.max(150,0.03*(hi-a))){ const mid=(best+hi)/2, rm=evalBillet(run,a,mid,prm,M,'quick'); if(rm.ok){ best=mid; bestR=rm; } else hi=mid; }
-    if(run.Ltot-best<400 && best<run.Ltot){ const mid=(a+run.Ltot)/2; const rm=evalBillet(run,a,mid,prm,M,'quick'); if(rm.ok){ best=mid; bestR=rm; } }
-    cuts.push(best); fits.push(bestR); a=best; }
-  run.cuts=cuts; run.fits=fits;
+  // integration fix 1: the loop lives in Helpers.segment, with the max length clamped so every setting terminates
+  const s=Helpers.segment(run.Ltot, Helpers.pieceMaxLength(M.L), (a,e)=>evalBillet(run,a,e,prm,M,'quick'));
+  run.cuts=s.cuts; run.fits=s.fits;
 }
 
 /* Phase B: geometry for every piece (and its billet in billet mode). */
@@ -721,10 +711,11 @@ function emitGeometry(runs){
     bg.setIndex(bpos.length/3>65535? new THREE.Uint32BufferAttribute(bidx,1) : new THREE.Uint16BufferAttribute(bidx,1)); bg.computeVertexNormals();
     bmesh=new THREE.Mesh(bg,BILLET_MAT); bmesh.renderOrder=5; const blg=new THREE.BufferGeometry(); blg.setAttribute('position',new THREE.Float32BufferAttribute(blpos,3));
     blines=new THREE.LineSegments(blg,BILLET_EDGE); blines.renderOrder=6; bmesh.visible=blines.visible=S.showBillets; boardGroup.add(bmesh,blines); }
-  const linear=pieces.reduce((a,q)=>a+q.len,0), Lst=stockLen();
-  const tot={ members:runs.length, pieces:pieces.length, linear, waste:1-linear/(pieces.length*Lst||1),
+  // integration fix 3: buy quantities scale with the layers stacked through the thickness (board route)
+  const Lst=stockLen(), bt=Helpers.boardTotals(pieces.map(q=>q.len), billetMode?1:prm.layers, Lst), linear=bt.linear;
+  const tot={ members:runs.length, pieces:pieces.length, linear, waste:bt.waste, layers:bt.layers, buy:bt.buy, linearBuy:bt.linearBuy,
     failing:pieces.filter(q=>billetMode? q.bst>=2 : q.Umax>1).length, near:pieces.filter(q=>q.Umax>0.8&&q.Umax<=1).length, ripped:pieces.filter(q=>q.ripped).length,
-    full:pieces.filter(q=>q.len>=Lst-1).length };
+    full:bt.full };
   if(billetMode) tot.billet=billetTotals(pieces,prm);
   S.boards={ pieces, geo, lgeo, mesh, lines, bmesh, blines, pv:Int32Array.from(pv), tot, pos, idx, bpos, bidx, billetMode };
   S.sel=-1; showPick(); return S.boards;
@@ -840,7 +831,7 @@ function cutListHTML(){
       <div><span>${prm.lamStock.replace('x','×')} to buy (${Lft} ft)</span><b>${b.boards2x}</b></div><div><span>Lam stock, linear</span><b>${(b.lin2x/1000).toFixed(0)} m · ${(b.lin2x/FT).toFixed(0)} ft</b></div></div>
       <p class="note">Lam boards are finger-jointed to length and edge-glued across the billet width. Tap a piece to see its billet.</p>`; }
   return `<div class="cl"><div><span>Members</span><b>${t.members}</b></div><div><span>Pieces</span><b>${t.pieces}</b></div>
-    <div><span>${S.size.replace('x','×')} × ${Lft} ft to buy</span><b>${t.pieces}</b></div><div><span>Linear length</span><b>${(t.linear/1000).toFixed(1)} m · ${(t.linear/FT).toFixed(0)} ft</b></div>
+    <div><span>${S.size.replace('x','×')} × ${Lft} ft to buy${t.layers>1?` (${t.layers} layers)`:''}</span><b>${t.buy}</b></div><div><span>Linear length</span><b>${(t.linearBuy/1000).toFixed(1)} m · ${(t.linearBuy/FT).toFixed(0)} ft</b></div>
     <div><span>Full-length pieces</span><b>${t.full}</b></div><div><span>Offcut waste</span><b>${(t.waste*100).toFixed(0)}%</b></div>
     <div><span>Pieces that fail</span><b class="${t.failing?'bad':'ok'}">${t.failing}</b></div><div><span>Ripped edge pieces</span><b>${t.ripped}</b></div></div>
     <p class="note">Tap a member in the 3D view to inspect it.</p>`;
@@ -860,9 +851,12 @@ function refreshUI(){
   const ol=$('objlist'); ol.innerHTML='';
   if(S.patches.length){ $('objSec').style.display=''; $('objCount').textContent=S.patches.length+' surf.';
     S.patches.forEach((p,i)=>{ const d=document.createElement('div');
-      d.innerHTML=`<input type="checkbox" ${p.include?'checked':''}><span class="nm" title="${p.name}">${p.name}</span><span class="ty">${p.kind}</span>`;
+      const nm=Helpers.escapeHtml(p.name); // integration fix 6: names come from the .3dm file
+      d.innerHTML=`<input type="checkbox" ${p.include?'checked':''}><span class="nm" title="${nm}">${nm}</span><span class="ty">${Helpers.escapeHtml(p.kind)}${p.trimmed?' · trimmed':''}</span>`;
       d.querySelector('input').onchange=(e)=>{ p.include=e.target.checked; if(!S.patches.some(q=>q.include)){ p.include=true; e.target.checked=true; return; } runAnalysis(false); };
-      ol.appendChild(d); }); }
+      ol.appendChild(d); });
+    const nTrim=S.patches.filter(p=>p.trimmed).length; $('trimNote').style.display=nTrim?'':'none';
+    $('trimNote').textContent=nTrim? `${nTrim} trimmed face${nTrim>1?'s are':' is'} analysed over the full untrimmed surface, so results include area outside the trim.` : ''; }
   const fail=st.fabFrac[2]+st.fabFrac[3]+st.fabFrac[4];
   const items=[
     ['Surface area', (st.area/1e6).toFixed(2)+' m²', `${S.patches.filter(p=>p.res).length} surface(s)`],
@@ -894,7 +888,7 @@ function statMembers(st){
   if(S.route==='billet'){ if(S.preview&&B&&B.tot.billet&&B.tot.billet.billets){ const b=B.tot.billet, bad=b.cncFail+b.lamFail;
       return ['Billets', `${b.billets} · ${(b.waste*100).toFixed(0)}% waste`, `${b.families} radius families · ${bad} won't work`, bad?'bad':'ok']; }
     return ['Members', boardsText(), `${st.b} mm wide · preview to fit billets`]; }
-  return S.preview&&B? ['Members', `${B.tot.members} · ${B.tot.pieces} pcs`, `${B.tot.pieces} × ${$('stockLen').value} ft stock · ${B.tot.failing} fail`, B.tot.failing?'bad':'ok'] : ['Boards', boardsText(), `${st.b} mm wide on the surface`]; }
+  return S.preview&&B? ['Members', `${B.tot.members} · ${B.tot.pieces} pcs`, `${B.tot.buy} × ${$('stockLen').value} ft stock · ${B.tot.failing} fail`, B.tot.failing?'bad':'ok'] : ['Boards', boardsText(), `${st.b} mm wide on the surface`]; }
 function boardsText(){ const ps=S.patches.filter(p=>p.res); const n=ps.reduce((a,p)=>a+(p.boardCount||0),0);
   const dirs=[...new Set(ps.map(p=>p.cls.dir.toUpperCase()))].join('/'); return `${n} × along ${dirs}`; }
 function updateDerived(){ const p=params(), sd=Core.stockDims(p);
@@ -915,7 +909,7 @@ drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) loadFil
 document.querySelectorAll('[data-sample]').forEach(b=>b.onclick=()=>loadSample(b.dataset.sample));
 document.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{ S.map=b.dataset.map; if(S.preview && S.map!=='timber'){ S.preview=false; buildScene(); }
   document.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x===b)); if(S.stats){ recolor(); refreshUI(); } });
-let tmr=null; const deb=(fn)=>{ clearTimeout(tmr); tmr=setTimeout(fn,250); };
+const deb=Helpers.debouncer(250); // integration fix 5: one timer per callback, so reclassify and rebillet never cancel each other
 ['layers','E','fb','tol','flatR','mode','orient','dir'].forEach(id=>$(id).addEventListener('input',()=>{ if(id==='E'||id==='fb') $('species').value='custom'; updateDerived(); deb(reclassify); }));
 $('species').addEventListener('change',()=>{ const sp=SPECIES[$('species').value]; if(sp){ $('E').value=sp.E; $('fb').value=sp.fb; } updateDerived(); reclassify(); });
 document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>selectSize(b.dataset.size));
@@ -1025,7 +1019,7 @@ $('exPdf').onclick=guard(async()=>{
   block(`Timber stock: ${S.size} ${S.orientLabel()}`, [
     ['Board section (actual)', `${prm.t} x ${prm.d} mm`], ['Layers / panel thickness', `${prm.layers} / ${st.T.toFixed(0)} mm`],
     ['E / forming stress limit', `${prm.E} / ${prm.fb} MPa`], ['Tightest bend for this stock', fmtM(st.stockRmin,1)],
-    ...(S.boards? [['Members / pieces', `${S.boards.tot.members} / ${S.boards.tot.pieces}`], [`Stock to buy (${$('stockLen').value} ft)`, `${S.boards.tot.pieces} pcs · ${(S.boards.tot.linear/FT).toFixed(0)} lin ft`],
+    ...(S.boards? [['Members / pieces', `${S.boards.tot.members} / ${S.boards.tot.pieces}`], [`Stock to buy (${$('stockLen').value} ft)`, `${S.boards.tot.buy} pcs · ${(S.boards.tot.linearBuy/FT).toFixed(0)} lin ft`],
       ['Offcut waste / failing pieces', `${(S.boards.tot.waste*100).toFixed(0)}% / ${S.boards.tot.failing}`, S.boards.tot.failing>0]] : [['Boards', boardsText()]]),
     ['Timber volume', (st.volume/1e9).toFixed(2)+' m³'],
     ['Area that bends OK / near limit', `${(st.fabFrac[0]*100).toFixed(0)}% / ${(st.fabFrac[1]*100).toFixed(0)}%`],
@@ -1061,8 +1055,8 @@ $('exZip').onclick=guard(async()=>{
         r.N[q*3].toFixed(5),r.N[q*3+1].toFixed(5),r.N[q*3+2].toFixed(5),(r.K[q]*1e6).toExponential(5),(r.H[q]*1e3).toExponential(5),
         (r.k1[q]*1e3).toExponential(5),(r.k2[q]*1e3).toExponential(5),isFinite(c.R[q])?(c.R[q]/1000).toFixed(4):'inf',TL[c.type[q]],c.dir,p.strip?p.strip[q]:'',c.Ub[q].toFixed(3),c.Uf[q].toFixed(3),c.U[q].toFixed(3),FL[c.fab[q]]].join(',')); } }
   files[`${baseName()}_curvature_samples.csv`]=enc.encode(rows.join('\n'));
-  { const B=ensureBoards(); const cl=['member,piece,of,cut_length_mm,cut_length_ft_in,stock,stock_length_ft,ripped,max_utilisation,tightest_bend_along_m,governs,status,surface'];
-    for(const q of B.pieces) cl.push([`B${String(q.board).padStart(3,'0')}`,q.piece,q.nPieces,q.len.toFixed(0),`"${fmtFtIn(q.len).replace(/"/g,'""')}"`,S.size,q.stockFt,q.ripped?'yes':'no',q.Umax.toFixed(3),isFinite(q.Rb)?(q.Rb/1000).toFixed(2):'inf',q.gov,q.status,`"${q.patch.replace(/"/g,"'")}"`].join(','));
+  { const B=ensureBoards(); const cl=['member,piece,of,cut_length_mm,cut_length_ft_in,stock,stock_length_ft,ripped,max_utilisation,tightest_bend_along_m,governs,status,surface,qty_to_buy'];
+    for(const q of B.pieces) cl.push([`B${String(q.board).padStart(3,'0')}`,q.piece,q.nPieces,q.len.toFixed(0),`"${fmtFtIn(q.len).replace(/"/g,'""')}"`,S.size,q.stockFt,q.ripped?'yes':'no',q.Umax.toFixed(3),isFinite(q.Rb)?(q.Rb/1000).toFixed(2):'inf',q.gov,q.status,`"${q.patch.replace(/"/g,"'")}"`,B.tot.layers||1].join(','));
     if(!B.billetMode) files[`${baseName()}_cutlist_${S.size}_${$('stockLen').value}ft.csv`]=enc.encode(cl.join('\n'));
     else { const prm2=params(), M=machine();
       const bl=['piece,member,piece_no,piece_length_mm,billet_radius_mm,lams,lam_mm,billet_width_mm,billet_depth_mm,billet_length_mm,billet_m3,part_m3,waste_pct,tightest_lam_R_over_t,lam_ok,cnc_opening_mm,cnc_fits,cnc_orientation,cnc_margin_mm,status'];
@@ -1075,7 +1069,7 @@ $('exZip').onclick=guard(async()=>{
   const st=S.stats;
   files['summary.json']=enc.encode(JSON.stringify({ file:S.fileName, units_source:S.fileUnitName, params:prm, verdict:st.verdict, detail:st.verdictDetail,
     area_m2:st.area/1e6, volume_m3:st.volume/1e9, K_min_per_m2:st.Kmin*1e6, K_max_per_m2:st.Kmax*1e6, R_min_m:st.Rmin/1000, R_min_at_mm:st.RminAt,
-    stock:S.size, orientation:prm.orient, stock_bend_limit_m:st.stockRmin/1000, panel_thickness_mm:st.T, max_thickness_mm:st.Tmax, feasible_area_fraction:st.feasible, governing:st.governing,
+    stock:Helpers.stockLabel(S.route,S.size,S.orientLabel(),prm.lamT,prm.lamStock), orientation:S.route==='billet'? null : prm.orient, /* integration fix 8 */ stock_bend_limit_m:st.stockRmin/1000, panel_thickness_mm:st.T, max_thickness_mm:st.Tmax, feasible_area_fraction:st.feasible, governing:st.governing,
     route:S.route, billets:S.boards&&S.boards.billetMode? (({layerRows,...rest})=>rest)(S.boards.tot.billet) : null,
     size_comparison:S.compare, stock_length_ft:+$('stockLen').value, members:S.boards?S.boards.tot:null, type_area_fraction:{planar:st.typeFrac[0],single:st.typeFrac[1],synclastic:st.typeFrac[2],anticlastic:st.typeFrac[3]},
     check_area_fraction:{ok:st.fabFrac[0],near_limit:st.fabFrac[1],fails:st.fabFrac[2],fails_badly:st.fabFrac[3],offset_self_intersects:st.fabFrac[4]} }, null, 2));
@@ -1092,7 +1086,7 @@ function build3dm(){
       for(let k=0;k<g.sidx.length;k++){ m.vertices().add(g.pos[k*3],g.pos[k*3+1],g.pos[k*3+2]); const c=sampleColor(p,g.sidx[k]); m.vertexColors().add(Math.round(c[0]*255),Math.round(c[1]*255),Math.round(c[2]*255)); }
       for(let k=0;k<g.idx.length;k+=3) m.faces().addTriFace(g.idx[k],g.idx[k+1],g.idx[k+2]);
       m.normals().computeNormals(); m.compact && m.compact();
-      const at=new rh.ObjectAttributes(); at.name=`${p.name} · ${S.size} ${S.orientLabel()} · ${st_T()} mm`; if(LY.surf>=0) at.layerIndex=LY.surf; doc.objects().addMesh(m,at);
+      const at=new rh.ObjectAttributes(); at.name=`${p.name} · ${Helpers.stockLabel(S.route,S.size,S.orientLabel(),prm.lamT,prm.lamStock)} · ${st_T()} mm`; if(LY.surf>=0) at.layerIndex=LY.surf; doc.objects().addMesh(m,at);
     }
     const B=ensureBoards();
     let LYb=-1; if(B.billetMode){ try{ LYb=doc.layers().addLayer('Billets',{r:217,g:185,b:143,a:255}); }catch(e){} }
@@ -1106,9 +1100,9 @@ function build3dm(){
       for(let v=q.v0; v<q.v1; v++){ m.vertices().add(B.pos[v*3],B.pos[v*3+1],B.pos[v*3+2]); const c=B.geo.attributes.color; m.vertexColors().add(Math.round(c.getX(v)*255),Math.round(c.getY(v)*255),Math.round(c.getZ(v)*255)); }
       for(let k=q.i0;k<q.i1;k+=3) m.faces().addTriFace(B.idx[k]-q.v0,B.idx[k+1]-q.v0,B.idx[k+2]-q.v0);
       m.normals().computeNormals();
-      const at=new rh.ObjectAttributes(); at.name=`B${String(q.board).padStart(3,'0')}-P${q.piece} · ${S.size} · ${(q.len/1000).toFixed(3)} m · ${q.status}`;
+      const at=new rh.ObjectAttributes(); at.name=`B${String(q.board).padStart(3,'0')}-P${q.piece} · ${B.billetMode? 'billet piece' : S.size} · ${(q.len/1000).toFixed(3)} m · ${q.status}`; // integration fix 8
       const ly=(B.billetMode? q.bst>=1 : q.Umax>1)?LY.fail:LY.ok; if(ly>=0) at.layerIndex=ly; doc.objects().addMesh(m,at); }
-  return doc.toByteArray().slice();
+  return Helpers.toRhino7Bytes(rh, doc).slice(); // integration fix 2: Rhino 7 archive
 }
 function guard(fn){ return async(ev)=>{ const b=ev&&ev.currentTarget; if(b) b.disabled=true; setStatus('Preparing export…');
   try{ const msg=await fn(); setStatus(msg||'Export ready'); }catch(e){ console.error(e); setStatus('Export failed: '+(e&&e.message||e), true); }
