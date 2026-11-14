@@ -1,0 +1,1119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Timber Surface Curvature Analyzer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --paper:#f4f2ed; --panel:#fbfaf7; --ink:#1d1d1b; --mute:#6b6a65; --line:#dcd8cf; --line2:#e9e6df;
+  --timber:#a8692e; --timber-soft:#f1e3d2; --ok:#3a8f5a; --warn:#d49a2a; --bad:#c94040; --off:#6d3fa0;
+  --sans:'IBM Plex Sans',system-ui,sans-serif; --mono:'IBM Plex Mono',ui-monospace,monospace;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--paper);color:var(--ink);font:14px/1.45 var(--sans)}
+.app{display:grid;grid-template-columns:340px 1fr;height:100vh}
+aside{background:var(--panel);border-right:1px solid var(--line);overflow-y:auto;display:flex;flex-direction:column}
+header.brand{padding:18px 18px 14px;border-bottom:1px solid var(--line)}
+.brand .eyebrow{font:500 10.5px/1 var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--timber)}
+.brand h1{font-size:18px;font-weight:600;margin:6px 0 2px;letter-spacing:-.01em}
+.brand p{margin:0;color:var(--mute);font-size:12.5px}
+section{padding:14px 18px;border-bottom:1px solid var(--line2)}
+section h2{font:500 10.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin:0 0 10px;display:flex;justify-content:space-between;align-items:center}
+.tag{font:500 9.5px/1 var(--mono);letter-spacing:.06em;padding:3px 6px;border-radius:3px;background:var(--timber-soft);color:var(--timber);text-transform:uppercase}
+.drop{display:block;border:1.5px dashed #c9c3b6;border-radius:8px;padding:16px 12px;text-align:center;cursor:pointer;transition:.15s;background:#fff}
+.drop:hover,.drop.over{border-color:var(--timber);background:#fffaf3}
+.drop strong{display:block;font-weight:600;font-size:13.5px}
+.drop span{color:var(--mute);font-size:12px}
+.drop input{display:none}
+.samples{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.samples button,.chip{font:500 11.5px var(--sans);border:1px solid var(--line);background:#fff;border-radius:999px;padding:5px 10px;cursor:pointer;color:var(--ink)}
+.samples button:hover,.chip:hover{border-color:var(--timber)}
+.chip.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.status{margin-top:10px;font:12px var(--mono);color:var(--mute);min-height:1em}
+.status.err{color:var(--bad)}
+.field{display:grid;grid-template-columns:1fr 92px;align-items:center;gap:8px;margin:7px 0}
+.field label{font-size:12.5px}
+.field small{display:block;color:var(--mute);font-size:11px;line-height:1.3}
+.field input,.field select{width:100%;font:13px var(--mono);padding:5px 7px;border:1px solid var(--line);border-radius:5px;background:#fff;color:var(--ink)}
+.field select{font-family:var(--sans);font-size:12.5px}
+.field.wide{grid-template-columns:1fr 150px}
+.check{display:flex;gap:8px;align-items:center;font-size:12.5px;margin:7px 0}
+.derived{font:12px var(--mono);background:var(--paper);border-radius:5px;padding:7px 9px;margin-top:6px;display:flex;justify-content:space-between}
+.maps{display:flex;flex-wrap:wrap;gap:6px}
+.objlist{max-height:150px;overflow:auto;font-size:12px;border:1px solid var(--line2);border-radius:6px;background:#fff}
+.objlist div{display:flex;gap:8px;align-items:center;padding:5px 8px;border-bottom:1px solid var(--line2)}
+.objlist div:last-child{border-bottom:0}
+.objlist .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.objlist .ty{font:10.5px var(--mono);color:var(--mute)}
+.btn{display:flex;align-items:center;justify-content:space-between;width:100%;font:500 13px var(--sans);padding:9px 12px;border-radius:6px;border:1px solid var(--ink);background:var(--ink);color:#fff;cursor:pointer;margin-bottom:7px}
+.btn.sec{background:#fff;color:var(--ink);border-color:var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn .ext{font:11px var(--mono);opacity:.7}
+.note{font-size:11.5px;color:var(--mute);margin:6px 0 0}
+main{position:relative;overflow:hidden;display:flex;flex-direction:column}
+#viewport{flex:1;position:relative;min-height:0}
+#viewport canvas{display:block;width:100%;height:100%}
+.toolbar{position:absolute;top:12px;left:12px;display:flex;gap:6px;flex-wrap:wrap}
+.toolbar .chip{background:rgba(255,255,255,.92)}
+.legend{position:absolute;left:12px;bottom:12px;background:rgba(251,250,247,.95);border:1px solid var(--line);border-radius:8px;padding:10px 12px;min-width:250px;max-width:330px}
+.legend .t{font-weight:600;font-size:12.5px}
+.legend .s{font-size:11px;color:var(--mute);margin-bottom:6px}
+.legend canvas{width:100%;height:auto;display:block}
+.verdict{position:absolute;top:12px;right:12px;background:rgba(251,250,247,.95);border:1px solid var(--line);border-radius:8px;padding:10px 14px;text-align:right;max-width:280px}
+.verdict .k{font:500 10px var(--mono);letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+.verdict .v{font-size:17px;font-weight:600;margin-top:2px}
+.verdict .d{font-size:12px;color:var(--mute)}
+.verdict.warn .v{color:var(--bad)}
+.stats{border-top:1px solid var(--line);background:var(--panel);display:grid;grid-template-columns:repeat(4,1fr);gap:0}
+.stat:nth-child(n+5){border-top:1px solid var(--line2)}
+.stat{padding:10px 14px;border-right:1px solid var(--line2)}
+.stat .k{font:500 10px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.stat .v{font:500 15px var(--mono);margin-top:3px}
+.stat .d{font-size:11px;color:var(--mute)}
+.stat .v.bad{color:var(--bad)} .stat .v.ok{color:var(--ok)}
+.empty{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;pointer-events:none}
+.empty div{text-align:center;color:var(--mute);max-width:360px}
+.empty b{display:block;color:var(--ink);font-size:16px;margin-bottom:4px}
+.busy{position:absolute;inset:0;background:rgba(244,242,237,.6);display:none;align-items:center;justify-content:center;font:13px var(--mono)}
+.busy.on{display:flex}
+.sizes{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-bottom:8px}
+.sizes button{font:500 13px var(--mono);padding:8px 0;border:1px solid var(--line);background:#fff;border-radius:6px;cursor:pointer;color:var(--ink)}
+.sizes button small{display:block;font:400 10px var(--mono);color:var(--mute);margin-top:2px}
+.sizes button.on{background:var(--timber);border-color:var(--timber);color:#fff}.sizes button.on small{color:#fbe9d6}
+table.cmp{width:100%;border-collapse:collapse;font-size:12px;margin-top:4px}
+table.cmp th{font:500 9.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute);text-align:right;padding:4px 4px;border-bottom:1px solid var(--line)}
+table.cmp th:first-child,table.cmp td:first-child{text-align:left}
+table.cmp td{font-family:var(--mono);text-align:right;padding:6px 4px;border-bottom:1px solid var(--line2);cursor:pointer}
+table.cmp tr.on td{background:var(--timber-soft)}
+table.cmp td.ok{color:var(--ok)} table.cmp td.bad{color:var(--bad)} table.cmp td.mid{color:#b07a12}
+.preview{position:absolute;top:12px;left:50%;transform:translateX(-50%);font:600 13px var(--sans);padding:9px 16px;border-radius:999px;border:1px solid var(--timber);background:var(--timber);color:#fff;cursor:pointer;box-shadow:0 2px 10px rgba(0,0,0,.12);white-space:nowrap}
+.preview.on{background:#fff;color:var(--timber)}
+.preview:disabled{display:none}
+.pick{position:absolute;right:12px;bottom:12px;width:290px;background:rgba(251,250,247,.97);border:1px solid var(--line);border-left:3px solid #ff7a00;border-radius:8px;padding:10px 12px;font-size:12px}
+.pick .k{font:500 10.5px var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+.pick .v{font-size:15px;font-weight:600;margin:3px 0 6px}
+.pick .v.ok{color:var(--ok)} .pick .v.mid{color:#b07a12} .pick .v.bad{color:var(--bad)}
+.pick table{width:100%;border-collapse:collapse} .pick td{padding:3px 0;border-top:1px solid var(--line2)} .pick td:last-child{text-align:right;font-family:var(--mono)}
+.pick .x{position:absolute;top:6px;right:8px;border:0;background:none;font-size:18px;cursor:pointer;color:var(--mute)}
+.ghostsw{position:absolute;top:56px;left:50%;transform:translateX(-50%);display:none;gap:4px}
+.ghostsw .chip{background:rgba(255,255,255,.92)}
+.ghostsw .chip.on{background:var(--ink);color:#fff}
+.cl{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line2);border:1px solid var(--line2);border-radius:6px;overflow:hidden;margin-top:8px}
+.cl div{background:#fff;padding:6px 8px} .cl span{display:block;font-size:10.5px;color:var(--mute)} .cl b{font:500 13px var(--mono)}
+.cl b.bad{color:var(--bad)} .cl b.ok{color:var(--ok)}
+body.route-billet .boards-only{display:none!important} body:not(.route-billet) .billet-only{display:none!important}
+.route{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--paper);padding:3px;border-radius:7px;margin-bottom:10px}
+.route button{border:0;background:none;padding:7px 4px;border-radius:5px;font:500 12px var(--sans);cursor:pointer;color:var(--mute);line-height:1.25}
+.route button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.1)}
+#jobpill{position:absolute;top:96px;left:50%;transform:translateX(-50%);background:var(--ink);color:#fff;font:12px var(--mono);padding:6px 12px;border-radius:999px;white-space:nowrap}
+@media (max-width:820px){
+  .app{grid-template-columns:1fr;grid-template-rows:auto;height:auto}
+  main{height:62vh;order:-1}
+  aside{border-right:0}
+  .legend{min-width:0;width:58%;padding:6px 8px;left:8px;bottom:8px}.legend .s{display:none}.legend .t{font-size:11px}
+  .verdict{padding:6px 9px;top:8px;right:8px}.verdict .v{font-size:14px}.verdict .d{display:none}
+  .toolbar{top:auto;left:auto;right:8px;bottom:8px;flex-direction:column}
+  .preview{top:8px;left:8px;transform:none;padding:7px 12px;font-size:12px}
+  .ghostsw{top:46px;left:8px;transform:none}
+  #jobpill{top:84px;left:8px;transform:none}
+  .pick{left:8px;right:8px;width:auto;bottom:8px;max-height:52%;overflow:auto;font-size:11px;padding:8px 10px}.pick .v{font-size:13px}
+  #viewport.picking .legend,#viewport.picking .toolbar{display:none}
+  .verdict{max-width:45%}
+  .stats{grid-template-columns:repeat(2,1fr)}.stat:nth-child(n+3){border-top:1px solid var(--line2)}
+}
+</style>
+<script src="rhino3dm.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
+</head>
+<body>
+<div class="app">
+<aside>
+  <header class="brand">
+    <div class="eyebrow">Closed-loop timber · Step 01</div>
+    <h1>Surface Curvature Analyzer</h1>
+    <p>Load a Rhino surface, map 2× lumber onto it, and see where each size can — and can’t — be bent.</p>
+  </header>
+
+  <section>
+    <h2>Input surface</h2>
+    <label class="drop" id="drop">
+      <input type="file" id="file" accept=".3dm">
+      <strong>Drop a .3dm file or tap to browse</strong>
+      <span>Surfaces, polysurfaces and extrusions are read</span>
+    </label>
+    <div class="samples">
+      <span style="font-size:11.5px;color:var(--mute);align-self:center">or try:</span>
+      <button data-sample="saddle">Saddle</button>
+      <button data-sample="dome">Dome</button>
+      <button data-sample="wave">Wave shell</button>
+      <button data-sample="shell">Large shell</button>
+      <button data-sample="barrel">Barrel (single)</button>
+    </div>
+    <div class="status" id="status">Loading Rhino reader…</div>
+  </section>
+
+  <section id="objSec" style="display:none">
+    <h2>Objects <span class="tag" id="objCount"></span></h2>
+    <div class="objlist" id="objlist"></div>
+    <div class="field wide" style="margin-top:10px"><label>Model units</label>
+      <select id="units"><option value="auto">From file</option><option value="1">Millimetres</option><option value="10">Centimetres</option><option value="1000">Metres</option><option value="25.4">Inches</option><option value="304.8">Feet</option></select></div>
+  </section>
+
+  <section>
+    <h2>Production route</h2>
+    <div class="route" id="route"><button data-route="boards" class="on">Bent 2× boards<br><small>dry, on site</small></button><button data-route="billet">Glulam billet → CNC<br><small>press one way, machine the rest</small></button></div>
+    <div class="billet-only">
+      <div class="field"><label>Member width<small>mm, across the surface</small></label><input type="number" id="memW" value="300" min="50" step="10"></div>
+      <div class="field"><label>Member depth<small>mm, panel thickness</small></label><input type="number" id="memD" value="200" min="20" step="10"></div>
+      <div class="field wide"><label>Lamination<small>cut from 2× stock</small></label>
+        <select id="lamT"><option value="38">38 mm · 2× as-is</option><option value="17" selected>17 mm · 2× ripped in two</option><option value="11">11 mm · 2× ripped in three</option></select></div>
+      <div class="field"><label>Min. lam R/t<small>default 125; confirm with supplier</small></label><input type="number" id="rt" value="125" min="10" step="5"></div>
+      <div class="field"><label>Machining allowance<small>mm per face</small></label><input type="number" id="allow" value="3" min="0" step="1"></div>
+      <div class="field"><label>Max CNC waste<small>% of billet, sets where members split</small></label><input type="number" id="wasteMax" value="40" min="1" max="99" step="5"></div>
+      <div class="field"><label>CNC opening<small>width × height, mm (your machine)</small></label><span style="display:flex;gap:4px"><input type="number" id="mW" value="1200" min="50" step="10"><input type="number" id="mH" value="280" min="20" step="10"></span></div>
+      <div class="field"><label>CNC max length<small>m, 0 = no limit</small></label><input type="number" id="mL" value="18" min="0" step="1"></div>
+      <div class="field wide"><label>Lam board stock<small>edge-glued across the billet</small></label>
+        <select id="lamStock"><option value="2x4">2×4</option><option value="2x6">2×6</option><option value="2x8">2×8</option><option value="2x10" selected>2×10</option></select></div>
+    </div>
+    <div class="boards-only">
+    <div class="sizes" id="sizes">
+      <button data-size="2x4">2×4<small>38×89</small></button>
+      <button data-size="2x6" class="on">2×6<small>38×140</small></button>
+      <button data-size="2x8">2×8<small>38×184</small></button>
+      <button data-size="2x10">2×10<small>38×235</small></button>
+    </div>
+    <div class="field wide"><label>Board orientation<small id="orientHelp">depth is the panel thickness</small></label>
+      <select id="orient"><option value="edge">On edge (ribs)</option><option value="flat">Flat (planks)</option></select></div>
+    <div class="field"><label>Layers<small>stacked through thickness</small></label><input type="number" id="layers" value="1" min="1" step="1"></div>
+    </div>
+    <div class="field wide"><label>Board direction</label>
+      <select id="dir"><option value="auto">Auto (best fit)</option><option value="u">Along surface U</option><option value="v">Along surface V</option></select></div>
+    <div class="field wide"><label>Thickness direction</label>
+      <select id="mode"><option value="center">Centered on surface</option><option value="out">Along normal (+)</option><option value="in">Against normal (−)</option></select></div>
+    <label class="check"><input type="checkbox" id="flip"> Flip surface normals</label>
+    <div class="derived"><span id="TtxtL">Panel thickness</span><b id="Ttxt">140 mm</b></div>
+    <div class="derived"><span id="RstockL">Tightest bend for this stock</span><b id="Rstocktxt">–</b></div>
+  </section>
+
+  <section>
+    <h2>Material &amp; tolerance <span class="tag">Until tests</span></h2>
+    <div class="boards-only">
+    <div class="field wide"><label>Species / grade</label>
+      <select id="species"><option value="spf">SPF No.2</option><option value="dfl">Douglas fir-larch No.2</option><option value="syp">Southern pine No.2</option><option value="custom">Custom (test data)</option></select></div>
+    <div class="field"><label>Stiffness E<small>MPa</small></label><input type="number" id="E" value="9650" min="100" step="100"></div>
+    <div class="field"><label>Forming stress limit<small>MPa, max bending stress</small></label><input type="number" id="fb" value="30" min="1" step="1"></div>
+    <div class="field"><label>Fit tolerance<small>mm gap under a board</small></label><input type="number" id="tol" value="2" min="0.1" step="0.5"></div>
+    </div>
+    <div class="field"><label>Treat as flat above<small>radius, metres</small></label><input type="number" id="flatR" value="100" min="1" step="5"></div>
+    <p class="note">These values are placeholders for now. They'll be replaced with measured values once you test how far the boards actually bend.</p>
+  </section>
+
+  <section>
+    <h2 id="cmpTitle">Size comparison</h2>
+    <table class="cmp" id="cmp"><thead><tr><th id="cmpH1">Stock</th><th id="cmpH2">Panel</th><th>Min R</th><th>Feasible</th></tr></thead><tbody></tbody></table>
+    <p class="note" id="cmpNote">Share of surface area each size can be bent to. Tap a row to select that size.</p>
+  </section>
+
+  <section>
+    <h2>Members &amp; cut list</h2>
+    <div class="field wide"><label>Stock length<small>US/Canada sizes, 2 ft steps</small></label>
+      <select id="stockLen"><option value="8">8 ft · 2.44 m</option><option value="10">10 ft · 3.05 m</option><option value="12" selected>12 ft · 3.66 m</option><option value="14">14 ft · 4.27 m</option><option value="16">16 ft · 4.88 m</option><option value="18">18 ft · 5.49 m (mill order)</option><option value="20">20 ft · 6.10 m (mill order)</option><option value="24">24 ft · 7.32 m (mill order)</option></select></div>
+    <label class="check boards-only"><input type="checkbox" id="stagger" checked> Stagger butt joints between neighbouring members</label>
+    <div id="cutlist"></div>
+  </section>
+
+  <section>
+    <h2>Display</h2>
+    <div class="maps" id="maps">
+      <button class="chip on" data-map="gauss">Gaussian K</button>
+      <button class="chip" data-map="mean">Mean H</button>
+      <button class="chip" data-map="radius">Min radius</button>
+      <button class="chip" data-map="type">Curvature type</button>
+      <button class="chip" data-map="timber">Timber utilisation</button>
+    </div>
+    <div class="field wide" style="margin-top:10px"><label>Analysis density</label>
+      <select id="density"><option value="6000">Draft</option><option value="20000" selected>Standard</option><option value="60000">Fine</option></select></div>
+    <label class="check"><input type="checkbox" id="solid" checked> Show timber thickness</label>
+    <label class="check"><input type="checkbox" id="edges" checked> Show edges</label>
+  </section>
+
+  <section>
+    <h2>Export</h2>
+    <button class="btn" id="exPdf" disabled>Analysis sheet <span class="ext">PDF · A3</span></button>
+    <button class="btn sec" id="exPng" disabled>Current view <span class="ext">PNG</span></button>
+    <button class="btn sec" id="ex3dm" disabled>Rhino model <span class="ext">3DM · members, billets, surface</span></button>
+    <button class="btn sec" id="exZip" disabled>Thickened model + data <span class="ext">ZIP · 3dm, csv</span></button>
+    <p class="note" id="exNote">Exports use the current camera view and colour map.</p>
+  </section>
+</aside>
+
+<main>
+  <div id="viewport">
+    <div class="empty" id="empty"><div><b>No surface loaded</b>Load a Rhino file, or pick one of the sample surfaces to see how the analysis works.</div></div>
+    <button class="preview" id="previewBtn" disabled>Preview timber mapping</button>
+    <div class="ghostsw" id="ghostsw"><button class="chip on boards-only" data-ghost="1">Ghosted</button><button class="chip boards-only" data-ghost="0">Shaded</button><button class="chip on billet-only" id="billetChip">Show billets</button></div>
+    <div id="jobpill" style="display:none"></div>
+    <div class="pick" id="pick" style="display:none"></div>
+    <div class="toolbar" id="views" style="display:none">
+      <button class="chip" data-view="iso">Iso</button>
+      <button class="chip" data-view="top">Top</button>
+      <button class="chip" data-view="front">Front</button>
+      <button class="chip" data-view="right">Right</button>
+    </div>
+    <div class="verdict" id="verdict" style="display:none"><div class="k">Classification</div><div class="v" id="vV"></div><div class="d" id="vD"></div></div>
+    <div class="legend" id="legend" style="display:none"><div class="t" id="lgT"></div><div class="s" id="lgS"></div><canvas id="lgC" width="600" height="70"></canvas></div>
+    <div class="busy" id="busy">Analyzing…</div>
+  </div>
+  <div class="stats" id="stats" style="display:none"></div>
+</main>
+</div>
+
+<script>/*__CORE__*/</script>
+<script type="module">
+import * as THREE from 'three';
+import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
+
+const $ = (id) => document.getElementById(id);
+const S = { rh: null, doc: null, fileName: null, fileUnits: 1, fileUnitName: 'mm', patches: [], skipped: [],
+  map: 'gauss', stats: null, downloads: null, meshes: [] };
+
+/* ---------- colour maps ---------- */
+const hex = (h) => [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255];
+const DIV = ['#2c5c9e','#8fb3d9','#f1efe9','#e8a07c','#b8322a'].map(hex);   // -1 .. +1
+const SEQ = ['#6e1a2c','#c6463a','#ee9a4d','#f5dc8e','#dfe8ec'].map(hex);   // tight .. flat
+const TYPE_C = { 0:'#b9b6ae', 1:'#e0a43a', 2:'#c0392b', 3:'#2c6cb0', 255:'#8a8a8a' };
+const TYPE_L = { 0:'Planar', 1:'Singly curved', 2:'Synclastic (dome)', 3:'Anticlastic (saddle)' };
+const FAB_C = { 0:'#3a8f5a', 1:'#e0a43a', 2:'#c8443c', 3:'#5e0f1b', 4:'#6d3fa0', 255:'#8a8a8a' };
+const FAB_L = { 0:'Bends OK', 1:'Near limit', 2:'Fails (1–1.5× limit)', 3:'Fails badly (>1.5×)', 4:'Thickness self-intersects' };
+const FAILRAMP = ['#df5a4c','#a3222a','#4f0a14'].map(hex);   // utilisation 1.0 → 2.0+
+const SIZES = { '2x4':{t:38,d:89}, '2x6':{t:38,d:140}, '2x8':{t:38,d:184}, '2x10':{t:38,d:235} };
+const SPECIES = { spf:{E:9650,fb:30}, dfl:{E:11000,fb:35}, syp:{E:11000,fb:38} };
+function ramp(stops, t){ t=Math.min(1,Math.max(0,t)); const f=t*(stops.length-1), i=Math.min(stops.length-2,Math.floor(f)), r=f-i;
+  const a=stops[i], b=stops[i+1]; return [a[0]+(b[0]-a[0])*r, a[1]+(b[1]-a[1])*r, a[2]+(b[2]-a[2])*r]; }
+function sampleColor(p, i){
+  const r=p.res, c=p.cls; if(!r.ok[i]) return hex('#8a8a8a');
+  const st=S.stats;
+  switch(S.map){
+    case 'gauss': return ramp(DIV, 0.5 + 0.5*r.K[i]/st.Kclip);
+    case 'mean': return ramp(DIV, 0.5 + 0.5*r.H[i]/st.Hclip);
+    case 'radius': { const R=c.R[i]; if(!isFinite(R)) return SEQ[4];
+      return ramp(SEQ, (Math.log(R)-Math.log(st.rLo))/(Math.log(st.rHi)-Math.log(st.rLo))); }
+    case 'type': return hex(TYPE_C[c.type[i]]);
+    case 'timber': { let col=(c.fab[i]===2||c.fab[i]===3)? ramp(FAILRAMP, Math.min(1,(c.U[i]-1)/1)) : hex(FAB_C[c.fab[i]]);
+      if(S.preview && p.strip && p.bandOK){ const f=(p.strip[i]&1)?0.86:1.0; col=[col[0]*f,col[1]*f,col[2]*f]; }
+      return col; }
+  }
+}
+const MAP_TITLE = { gauss:'Gaussian curvature K', mean:'Mean curvature H', radius:'Minimum bending radius', type:'Curvature type', timber:'Timber utilisation' };
+const FAB_LB = { 0:'Lam bend OK', 1:'Near lam limit', 2:'Lams too thick', 3:'Far too thick (>1.5×)', 4:'Thickness self-intersects' };
+function mapTitle(m){ if(m==='timber' && S.route==='billet') return S.preview? 'Billet status' : 'Lamination bend check'; return MAP_TITLE[m]; }
+const fmtK = (k) => { const v=k*1e6; return Math.abs(v)<0.001? v.toExponential(1) : v.toPrecision(2); }; // 1/m²
+const fmtH = (h) => { const v=h*1e3; return Math.abs(v)<0.001? v.toExponential(1) : v.toPrecision(2); }; // 1/m
+const fmtM = (mm, d=2) => isFinite(mm) ? (mm/1000).toFixed(d)+' m' : '∞';
+function mapSubtitle(){
+  const st=S.stats;
+  return { gauss:'1/m² · red = dome (K>0) · blue = saddle (K<0)', mean:'1/m · sign follows surface normal',
+    radius:'metres · log scale · line = tightest bend for the stock', type:'share of surface area',
+    timber: S.route==='billet'? (S.preview? `${machine().name} · waste target ${(params().wasteMax*100).toFixed(0)}%` : `${params().lamT} mm lams · R/t ≥ ${params().rt} · tightest lam bend ${fmtM(st.stockRmin,1)}`)
+      : `${S.size} ${S.orientLabel()} · bend limit ${fmtM(st.stockRmin,1)} · darker red = more overstressed` }[S.map];
+}
+function drawLegend(cv, map){
+  const st=S.stats, ctx=cv.getContext('2d'), W=cv.width, H=cv.height;
+  ctx.clearRect(0,0,W,H); ctx.font='500 20px "IBM Plex Mono", monospace'; ctx.fillStyle='#1d1d1b'; ctx.textBaseline='top';
+  const toCss=(c)=>`rgb(${c.map(x=>Math.round(x*255)).join(',')})`;
+  if(map==='timber' && S.route==='billet' && S.preview && S.boards && S.boards.billetMode){
+    const P=S.boards.pieces, keys=P.some(q=>q.bst===9)?[9]:[0,1,2,3]; ctx.font='400 19px "IBM Plex Sans", sans-serif';
+    keys.forEach((k,j)=>{ const x=(j%2)*(W/2), y=Math.floor(j/2)*34; ctx.fillStyle=BST_C[k]; ctx.fillRect(x,y+3,20,20);
+      ctx.fillStyle='#1d1d1b'; ctx.fillText(`${BST_L[k]} · ${P.filter(q=>q.bst===k).length}`, x+28, y+3); });
+    return; }
+  if(map==='type'||map==='timber'){
+    const keys=map==='type'?[0,1,2,3]:(st.fabFrac[4]>0?[0,1,2,3,4]:[0,1,2,3]), C=map==='type'?TYPE_C:FAB_C, L=map==='type'?TYPE_L:(S.route==='billet'?FAB_LB:FAB_L), F=map==='type'?st.typeFrac:st.fabFrac;
+    ctx.font='400 19px "IBM Plex Sans", sans-serif';
+    keys.forEach((k,j)=>{ const x=(j%2)*(W/2), y=Math.floor(j/2)*34; ctx.fillStyle=C[k]; ctx.fillRect(x,y+3,20,20);
+      ctx.fillStyle='#1d1d1b'; ctx.fillText(`${L[k]} · ${(F[k]*100).toFixed(0)}%`, x+28, y+3); });
+    return;
+  }
+  const stops = map==='radius'? SEQ : DIV, bh=22;
+  for(let x=0;x<W;x++){ ctx.fillStyle=toCss(ramp(stops,x/(W-1))); ctx.fillRect(x,0,1,bh); }
+  let labels;
+  if(map==='gauss') labels=[`−${fmtK(st.Kclip)}`,'0',`+${fmtK(st.Kclip)}`];
+  else if(map==='mean') labels=[`−${fmtH(st.Hclip)}`,'0',`+${fmtH(st.Hclip)}`];
+  else { labels=[fmtM(st.rLo), fmtM(Math.sqrt(st.rLo*st.rHi)), fmtM(st.rHi)];
+    const t=(Math.log(st.stockRmin)-Math.log(st.rLo))/(Math.log(st.rHi)-Math.log(st.rLo));
+    if(t>=0&&t<=1){ const x=t*(W-1); ctx.fillStyle='#1d1d1b'; ctx.fillRect(x-1.5,-2,3,bh+8); } }
+  ctx.fillStyle='#1d1d1b'; ctx.font='500 18px "IBM Plex Mono", monospace';
+  ctx.textAlign='left'; ctx.fillText(labels[0],0,bh+10); ctx.textAlign='center'; ctx.fillText(labels[1],W/2,bh+10); ctx.textAlign='right'; ctx.fillText(labels[2],W,bh+10); ctx.textAlign='left';
+}
+
+/* ---------- three.js viewer ---------- */
+const vp=$('viewport');
+const renderer=new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true});
+renderer.setPixelRatio(Math.min(window.devicePixelRatio,2));
+renderer.setClearColor(0xf4f2ed);
+vp.prepend(renderer.domElement);
+const scene=new THREE.Scene();
+THREE.Object3D.DEFAULT_UP.set(0,0,1);
+const camera=new THREE.PerspectiveCamera(35,1,1,1e7); camera.up.set(0,0,1);
+const controls=new OrbitControls(camera, renderer.domElement); controls.enableDamping=true;
+scene.add(new THREE.HemisphereLight(0xffffff,0x8d8778,1.6));
+const sun=new THREE.DirectionalLight(0xffffff,1.6); scene.add(sun);
+const group=new THREE.Group(); scene.add(group);
+let marker=null;
+function resize(){ const w=vp.clientWidth,h=vp.clientHeight; renderer.setSize(w,h,false); camera.aspect=w/h; camera.updateProjectionMatrix(); }
+new ResizeObserver(resize).observe(vp); resize();
+(function loop(){ requestAnimationFrame(loop); controls.update(); sun.position.copy(camera.position); renderer.render(scene,camera); })();
+
+let bounds=null;
+function setView(kind){
+  if(!bounds) return; const c=bounds.getCenter(new THREE.Vector3()), r=bounds.getSize(new THREE.Vector3()).length()*0.5||1;
+  const d=r/Math.sin(THREE.MathUtils.degToRad(camera.fov/2))*1.05;
+  const dir={iso:[1,-1.2,0.9], top:[0,-0.0001,1], front:[0,-1,0.0001], right:[1,0,0.0001]}[kind];
+  const v=new THREE.Vector3(...dir).normalize().multiplyScalar(d);
+  camera.position.copy(c).add(v); camera.near=d/100; camera.far=d*100; camera.updateProjectionMatrix();
+  controls.target.copy(c); controls.update();
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+
+/* ---------- parameters ---------- */
+S.size='2x6'; S.preview=false; S.route='boards';
+S.orientLabel=()=>$('orient').value==='edge'?'on edge':'flat';
+function params(size){
+  const route=S.route, z=SIZES[(route==='boards'&&size)||S.size];
+  const lamT=+((route==='billet'&&size)||$('lamT').value), ls=$('lamStock').value;
+  return { route, t:z.t, d:z.d, orient:$('orient').value, layers: Math.max(1, Math.round(+$('layers').value||1)), dir:$('dir').value,
+    E: Math.max(100, +$('E').value||9650), fb: Math.max(0.1, +$('fb').value||30), tol: Math.max(0.05, +$('tol').value||2),
+    flatR: Math.max(1, +$('flatR').value||100)*1000, mode: $('mode').value,
+    lamT, lamPerBoard:({38:1,17:2,11:3})[lamT]||1, memberW:Math.max(50,+$('memW').value||300), memberD:Math.max(20,+$('memD').value||200),
+    rt:Math.max(10,+$('rt').value||125), allow:Math.max(0,+$('allow').value||0), wasteMax:Math.min(0.99,Math.max(0.01,(+$('wasteMax').value||40)/100)),
+    lamStock:ls, lamStockD:SIZES[ls].d };
+}
+function unitFactor(){ const u=$('units').value; return u==='auto'? S.fileUnits : +u; }
+
+/* ---------- Rhino loading ---------- */
+const UNIT_MAP = [['Millimeters',1,'mm'],['Centimeters',10,'cm'],['Decimeters',100,'dm'],['Meters',1000,'m'],['Inches',25.4,'in'],['Feet',304.8,'ft']];
+function setStatus(t, err){ const s=$('status'); s.textContent=t; s.classList.toggle('err',!!err); }
+
+rhino3dm({ locateFile: (p) => new URL(p, document.baseURI).href }).then(rh => { S.rh=rh; setStatus('Ready — load a .3dm file'); })
+  .catch(e => setStatus('Could not start the Rhino reader: '+e.message+'. Samples still work.', true));
+
+function surfaceLen(ev, dom, dir){
+  let L=0, prev=null; for(let k=0;k<=8;k++){ const t=k/8;
+    const p = dir==='u'? ev(dom.u0+(dom.u1-dom.u0)*t, (dom.v0+dom.v1)/2) : ev((dom.u0+dom.u1)/2, dom.v0+(dom.v1-dom.v0)*t);
+    if(prev) L+=Math.hypot(p[0]-prev[0],p[1]-prev[1],p[2]-prev[2]); prev=p; } return L||1;
+}
+function makePatch(name, kind, srf, flip){
+  const d0=srf.domain(0), d1=srf.domain(1);
+  return { name, kind, raw:(u,v)=>srf.pointAt(u,v), dom:{u0:d0[0],u1:d0[1],v0:d1[0],v1:d1[1]}, flip:!!flip, include:true, keep:srf };
+}
+async function loadFile(file){
+  if(!S.rh){ setStatus('Rhino reader is still loading — try again in a moment', true); return; }
+  if(!/\.3dm$/i.test(file.name)){ setStatus('Please choose a Rhino .3dm file', true); return; }
+  setStatus('Reading '+file.name+'…');
+  const rh=S.rh; const buf=new Uint8Array(await file.arrayBuffer());
+  const doc=rh.File3dm.fromByteArray(buf);
+  if(!doc){ setStatus('This file could not be read. Save it from Rhino 6, 7 or 8 and try again.', true); return; }
+  if(S.doc && S.doc.delete) try{ S.doc.delete(); }catch(e){}
+  S.doc=doc; S.fileName=file.name;
+  S.fileUnits=1; S.fileUnitName='mm (assumed)';
+  const us=doc.settings().modelUnitSystem;
+  for(const [k,f,n] of UNIT_MAP) if(us===rh.UnitSystem[k]){ S.fileUnits=f; S.fileUnitName=n; }
+  const patches=[], skipped={};
+  const objs=doc.objects(); let layers=null; try{ layers=doc.layers(); }catch(e){}
+  for(let i=0;i<objs.count;i++){
+    const o=objs.get(i), g=o.geometry(), at=o.attributes();
+    let base=at.name||''; if(!base && layers){ try{ base=layers.get(at.layerIndex).name; }catch(e){} }
+    base = base || ('Object '+(i+1));
+    const t=g.objectType;
+    try{
+      if(t===rh.ObjectType.Brep || t===rh.ObjectType.Extrusion){
+        const br = t===rh.ObjectType.Brep ? g : g.toBrep(true);
+        const fs=br.faces();
+        for(let f=0;f<fs.count;f++){ const face=fs.get(f); patches.push(makePatch(fs.count>1?`${base} · face ${f+1}`:base, t===rh.ObjectType.Brep?'Polysurface':'Extrusion', face, face.orientationIsReversed)); }
+        patches[patches.length-1] && (patches[patches.length-1].brepRef=br);
+      } else if(t===rh.ObjectType.Surface){
+        patches.push(makePatch(base, 'Surface', g, false));
+      } else {
+        const nm = g.constructor && g.constructor.name || 'Other'; skipped[nm]=(skipped[nm]||0)+1;
+      }
+    }catch(e){ skipped['Unreadable']=(skipped['Unreadable']||0)+1; }
+  }
+  S.patches=patches; S.skipped=skipped;
+  const sk=Object.entries(skipped).map(([k,v])=>`${v} ${k}`).join(', ');
+  if(!patches.length){ setStatus('No surfaces found in this file'+(sk?` (found: ${sk}). Convert meshes/SubD to NURBS in Rhino first.`:'.'), true); return; }
+  setStatus(`${file.name} · ${patches.length} surface${patches.length>1?'s':''} · units ${S.fileUnitName}` + (sk?` · skipped ${sk}`:''));
+  $('units').value='auto'; $('units').options[0].text=`From file (${S.fileUnitName})`;
+  runAnalysis(true);
+}
+
+/* ---------- sample surfaces (analytic, mm) ---------- */
+const SAMPLES = {
+  saddle:{ name:'Sample saddle 4.0 × 3.0 m', f:(u,v)=>[u*4000, v*3000, 600*((2*u-1)**2-(2*v-1)**2)] },
+  dome:{ name:'Sample dome R = 6 m', f:(u,v)=>{ const R=6000,x=(u-0.5)*4000,y=(v-0.5)*3000; return [x+2000,y+1500,Math.sqrt(R*R-x*x-y*y)-Math.sqrt(R*R-2000**2-1500**2)]; } },
+  wave:{ name:'Sample wave shell 5.0 × 3.0 m', f:(u,v)=>[u*5000, v*3000, 380*Math.sin(2*Math.PI*u)*Math.cos(Math.PI*(v-0.5))+250*(2*v-1)**2] },
+  shell:{ name:'Sample large shell 12 × 8 m', f:(u,v)=>[u*12000, v*8000, 900*(2*u-1)**2-500*(2*v-1)**2] },
+  barrel:{ name:'Sample barrel R = 3 m', f:(u,v)=>{ const t=(v-0.5)*1.6; return [u*4000, 3000*Math.sin(t)+2400, 3000*Math.cos(t)-3000*Math.cos(0.8)]; } },
+};
+function loadSample(key){
+  const s=SAMPLES[key];
+  S.patches=[{ name:s.name, kind:'Sample', raw:s.f, dom:{u0:0,u1:1,v0:0,v1:1}, flip:false, include:true }];
+  S.skipped={}; S.fileName=s.name; S.fileUnits=1; S.fileUnitName='mm';
+  $('units').value='auto'; $('units').options[0].text='From file (mm)';
+  setStatus('Loaded '+s.name);
+  runAnalysis(true);
+}
+
+/* ---------- analysis ---------- */
+function analyze(){
+  const f=unitFactor(), flipAll=$('flip').checked, target=+$('density').value;
+  const inc=S.patches.filter(p=>p.include);
+  const per=target/Math.max(1,inc.length);
+  for(const p of S.patches){
+    if(!p.include){ p.res=null; continue; }
+    const ev=(u,v)=>{ const q=p.raw(u,v); return [q[0]*f,q[1]*f,q[2]*f]; };
+    const lu=surfaceLen(ev,p.dom,'u'), lv=surfaceLen(ev,p.dom,'v');
+    let nu=Math.round(Math.sqrt(per*lu/lv)); nu=Math.min(260,Math.max(8,nu));
+    let nv=Math.round(per/nu); nv=Math.min(260,Math.max(8,nv));
+    p.res=Core.analyzePatch(ev,p.dom,nu,nv,p.flip!==flipAll);
+  }
+}
+function classifyAll(){
+  const prm=params();
+  for(const p of S.patches){ p.cls = p.res ? Core.classify(p.res, prm) : null; if(p.res) computeStrips(p, prm); }
+  S.stats=Core.summarize(S.patches.filter(p=>p.res), prm);
+  const keys=S.route==='billet'? ['38','17','11'] : Object.keys(SIZES);
+  S.compare=keys.map(k=>{ const q=params(k); let A=0, okA=0;
+    for(const p of S.patches){ if(!p.res) continue; const c=Core.classify(p.res,q);
+      for(let i=0;i<c.fab.length;i++){ if(c.fab[i]===255) continue; A+=p.res.A[i]; if(c.fab[i]<=1) okA+=p.res.A[i]; } }
+    const sd=Core.stockDims(q); return { size:k, label:S.route==='billet'? k+' mm' : k.replace('x','×'), per:q.lamPerBoard, T:sd.T, Rmin:sd.Rmin, feasible:okA/(A||1) }; });
+}
+/* Lay boards side by side across the surface: strip index per sample + seam polylines. */
+function computeStrips(p, prm){
+  const r=p.res, nu=r.nu, nv=r.nv, b=Core.stockDims(prm).b, alongU=p.cls.dir==='u';
+  const nL=alongU?nu:nv, nT=alongU?nv:nu, id=(l,t)=>alongU?(t*nu+l):(l*nu+t);
+  const strip=new Int32Array(nu*nv), sArr=new Float64Array(nu*nv); let maxS=0, spacing=0, cnt=0;
+  for(let l=0;l<nL;l++){ let s=0;
+    for(let t=0;t<nT;t++){ const i=id(l,t);
+      if(t>0){ const j=id(l,t-1); const d=Math.hypot(r.P[i*3]-r.P[j*3],r.P[i*3+1]-r.P[j*3+1],r.P[i*3+2]-r.P[j*3+2]); s+=d; spacing+=d; cnt++; }
+      sArr[i]=s; strip[i]=Math.floor(s/b); }
+    maxS=Math.max(maxS,s); }
+  p.strip=strip; p.bandOK = b >= 1.6*(spacing/(cnt||1)); p.sArr=sArr; p.nL=nL; p.nT=nT; p.alongU=alongU;
+  p.boardCount=Math.ceil(maxS/b); p.seams=[];
+  const nSeam=Math.floor(maxS/b), step=Math.max(1,Math.ceil(nSeam/90)); p.seamStep=step;
+  for(let k=step;k<=nSeam;k+=step){ const target=k*b, line=[];
+    for(let l=0;l<nL;l++){ for(let t=1;t<nT;t++){ const i=id(l,t), j=id(l,t-1);
+      if(sArr[j]<=target && sArr[i]>target){ const f=(target-sArr[j])/(sArr[i]-sArr[j]); line.push([j,i,f]); break; } } }
+    if(line.length>1) p.seams.push(line); }
+}
+function runAnalysis(refit){
+  if(!S.patches.length) return;
+  $('busy').classList.add('on');
+  setTimeout(()=>{
+    try{ analyze(); classifyAll(); buildScene(); if(refit) setView('iso'); refreshUI(); }
+    catch(e){ console.error(e); setStatus('Analysis failed: '+e.message, true); }
+    $('busy').classList.remove('on');
+  }, 30);
+}
+function reclassify(){ if(!S.patches.length||!S.stats) return; classifyAll(); buildScene(); refreshUI(); }
+
+/* ---------- mesh building ---------- */
+function buildPatchGeometry(p, dLo, dHi, solid){
+  const r=p.res, nu=r.nu, nv=r.nv, n=nu*nv;
+  const pos=[], sidx=[], idx=[];
+  const pushV=(i,d)=>{ pos.push(r.P[i*3]+r.N[i*3]*d, r.P[i*3+1]+r.N[i*3+1]*d, r.P[i*3+2]+r.N[i*3+2]*d); sidx.push(i); return sidx.length-1; };
+  const layer=(d)=>{ const b=sidx.length; for(let i=0;i<n;i++) pushV(i,d); return b; };
+  const quadsGrid=(b,rev)=>{ for(let j=0;j<nv-1;j++) for(let i=0;i<nu-1;i++){
+    const a=j*nu+i, q=[b+a,b+a+1,b+a+nu+1,b+a+nu];
+    if(!r.ok[a]||!r.ok[a+1]||!r.ok[a+nu]||!r.ok[a+nu+1]) continue;
+    if(rev) idx.push(q[0],q[2],q[1],q[0],q[3],q[2]); else idx.push(q[0],q[1],q[2],q[0],q[2],q[3]); } };
+  if(!solid){ quadsGrid(layer(0),false); return {pos,sidx,idx}; }
+  quadsGrid(layer(dHi),false); quadsGrid(layer(dLo),true);
+  const sides=[[...Array(nu).keys()].map(i=>i), [...Array(nv).keys()].map(j=>j*nu+nu-1),
+    [...Array(nu).keys()].map(i=>(nv-1)*nu+nu-1-i), [...Array(nv).keys()].map(j=>(nv-1-j)*nu)];
+  for(const s of sides){ const b=sidx.length; for(const i of s){ pushV(i,dHi); pushV(i,dLo); }
+    for(let k=0;k<s.length-1;k++){ if(!r.ok[s[k]]||!r.ok[s[k+1]]) continue; const a=b+k*2; idx.push(a,a+1,a+3,a,a+3,a+2); } }
+  return {pos,sidx,idx};
+}
+function buildScene(){
+  for(const m of S.meshes){ m.geometry.dispose(); } group.clear(); S.meshes=[];
+  const prm=params(), [dLo,dHi]=Core.offsetRange(Core.stockDims(prm).T, prm.mode), solid=$('solid').checked;
+  const mat=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.85, metalness:0, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1});
+  const lineMat=new THREE.LineBasicMaterial({color:0x2a2924, transparent:true, opacity:0.55});
+  bounds=new THREE.Box3();
+  for(const p of S.patches){ if(!p.res) continue;
+    const g=buildPatchGeometry(p,dLo,dHi,solid);
+    const geo=new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.Float32BufferAttribute(g.pos,3));
+    geo.setAttribute('color', new THREE.Float32BufferAttribute(new Float32Array(g.sidx.length*3),3));
+    geo.setIndex(g.idx); geo.computeVertexNormals();
+    const mesh=new THREE.Mesh(geo,mat); mesh.userData={patch:p, sidx:g.sidx}; group.add(mesh); S.meshes.push(mesh);
+    if($('edges').checked){ const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo,35), lineMat); group.add(e); }
+    geo.computeBoundingBox(); bounds.union(geo.boundingBox);
+  }
+  const st=S.stats;
+  if(st && st.RminRef){ const rad=bounds.getSize(new THREE.Vector3()).length()*0.011, {p,i}=st.RminRef, r=p.res, d=solid?dHi:0;
+    marker=new THREE.Mesh(new THREE.SphereGeometry(rad,20,14), new THREE.MeshBasicMaterial({color:0x1d1d1b}));
+    marker.position.set(r.P[i*3]+r.N[i*3]*d, r.P[i*3+1]+r.N[i*3+1]*d, r.P[i*3+2]+r.N[i*3+2]*d); group.add(marker); }
+  recolor();
+  if(S.preview){ buildBoards(); group.visible=false; boardGroup.visible=true; }
+  else { group.visible=true; boardGroup.visible=false; boardGroup.clear(); S.boards=null; S.runs=null; S.job=null; setPill(''); S.sel=-1; $('pick').style.display='none'; }
+  $('ghostsw').style.display=S.preview?'flex':'none';
+}
+function recolor(){
+  for(const m of S.meshes){ const {patch,sidx}=m.userData, col=m.geometry.attributes.color;
+    for(let k=0;k<sidx.length;k++){ const c=sampleColor(patch,sidx[k]); col.setXYZ(k,c[0],c[1],c[2]); }
+    col.needsUpdate=true; }
+}
+
+/* ---------- members, pieces and billets (timber preview) ---------- */
+const FT=304.8;
+S.boards=null; S.ghost=true; S.sel=-1; S.showBillets=true; S.job=null; S.runs=null;
+const boardGroup=new THREE.Group(); boardGroup.visible=false; scene.add(boardGroup);
+const GHOST_MAT=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.7, metalness:0, transparent:true, opacity:0.3, depthWrite:false, side:THREE.DoubleSide});
+const SHADE_MAT=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.8, metalness:0, side:THREE.DoubleSide, polygonOffset:true, polygonOffsetFactor:1, polygonOffsetUnits:1});
+const EDGE_GHOST=new THREE.LineBasicMaterial({color:0x1d1d1b, transparent:true, opacity:0.5, depthWrite:false});
+const EDGE_SHADE=new THREE.LineBasicMaterial({color:0x1d1d1b, transparent:true, opacity:0.75});
+const SEL_EDGE=new THREE.LineBasicMaterial({color:0xff7a00, depthTest:false, transparent:true});
+const SEL_MAT=new THREE.MeshStandardMaterial({vertexColors:true, roughness:0.6, side:THREE.DoubleSide, emissive:0x3a1d00});
+const BILLET_MAT=new THREE.MeshStandardMaterial({color:0xd9b98f, roughness:0.9, transparent:true, opacity:0.13, depthWrite:false, side:THREE.DoubleSide});
+const BILLET_EDGE=new THREE.LineBasicMaterial({color:0xb5651d, transparent:true, opacity:0.75, depthWrite:false});
+const MACHINES=[];
+const BST_C={0:'#3a8f5a',1:'#e0a43a',2:'#d0453f',3:'#6e1220',9:'#a8a499'};
+const BST_L={0:'Billet OK',1:'Over waste target',2:'Lams too thick',3:'Won’t fit CNC',9:'Fitting…'};
+function machine(){ const w=Math.max(1,+$('mW').value||1200), h=Math.max(1,+$('mH').value||280), L=Math.max(0,+$('mL').value||0)*1000; return {name:`CNC opening ${w}×${h} mm`, w, h, L}; }
+function stockLen(){ return (+$('stockLen').value)*FT; }
+function timberColor(p,i){ const c=p.cls; if(!p.res.ok[i]) return hex('#8a8a8a');
+  return (c.fab[i]===2||c.fab[i]===3)? ramp(FAILRAMP, Math.min(1,(c.U[i]-1)/1)) : hex(FAB_C[c.fab[i]]); }
+function fmtFtIn(mm){ const inch=mm/25.4, ft=Math.floor(inch/12), r=inch-ft*12; return `${ft}' ${r.toFixed(1)}"`; }
+
+/* Phase A: member runs along the surface (stations with the 4 section corners). */
+function prepareRuns(prm){
+  const sd=Core.stockDims(prm), [dLo,dHi]=Core.offsetRange(sd.T, prm.mode), runs=[];
+  const lerp3=(a,o1,b,o2,f,out,oo)=>{ for(let q=0;q<3;q++) out[oo+q]=a[o1+q]+(b[o2+q]-a[o1+q])*f; };
+  let boardNo=0;
+  for(const p of S.patches){ if(!p.res||!p.sArr) continue;
+    const r=p.res, b=sd.b, nL=p.nL, nT=p.nT, alongU=p.alongU, id=(l,t)=>alongU?(t*r.nu+l):(l*r.nu+t);
+    const K=p.boardCount, ST=new Float32Array(K*nL*12), SI=new Int32Array(K*nL).fill(-1), PW=new Float32Array(K*nL), tmp=new Float64Array(3);
+    for(let l=0;l<nL;l++){ let t=1; const sMax=p.sArr[id(l,nT-1)];
+      const at=(s)=>{ while(t<nT-1 && p.sArr[id(l,t)]<s) t++; const i=id(l,t), j=id(l,t-1), s0=p.sArr[j], s1=p.sArr[i];
+        return [j,i, s1>s0? Math.min(1,Math.max(0,(s-s0)/(s1-s0))) : 0]; };
+      for(let k=0;k<K;k++){ const s0=k*b; if(s0>=sMax-1e-6) break; const s1=Math.min((k+1)*b,sMax);
+        if(s1-s0<b*0.2) break;
+        const A=at(s0), M=at((s0+s1)/2), B=at(s1);
+        if(!r.ok[A[0]]||!r.ok[A[1]]||!r.ok[B[0]]||!r.ok[B[1]]) continue;
+        const o=(k*nL+l)*12;
+        for(const [E,off] of [[A,0],[B,6]]){ const [j,i,f]=E;
+          lerp3(r.P,j*3,r.P,i*3,f,ST,o+off); lerp3(r.N,j*3,r.N,i*3,f,tmp,0);
+          const ln=Math.hypot(tmp[0],tmp[1],tmp[2])||1; ST[o+off+3]=tmp[0]/ln; ST[o+off+4]=tmp[1]/ln; ST[o+off+5]=tmp[2]/ln; }
+        SI[k*nL+l]= M[2]<0.5? M[0] : M[1]; PW[k*nL+l]=(s1-s0)/b; } }
+    const corners=(o)=>{ const out=new Float64Array(12); for(let q=0;q<3;q++){ out[q]=ST[o+q]+ST[o+3+q]*dLo; out[3+q]=ST[o+6+q]+ST[o+9+q]*dLo; out[6+q]=ST[o+6+q]+ST[o+9+q]*dHi; out[9+q]=ST[o+q]+ST[o+3+q]*dHi; } return out; };
+    for(let k=0;k<K;k++){ let l=0;
+      while(l<nL){
+        while(l<nL && SI[k*nL+l]<0) l++; if(l>=nL) break;
+        const st=[]; while(l<nL && SI[k*nL+l]>=0){ st.push(l); l++; }
+        if(st.length<2) continue;
+        const C=st.map(li=>corners((k*nL+li)*12));
+        const arc=[0]; for(let q=1;q<st.length;q++){ const a=C[q-1],bb=C[q]; let d=0;
+          for(let e=0;e<3;e++){ const ca=(a[e]+a[3+e]+a[6+e]+a[9+e])/4, cb=(bb[e]+bb[3+e]+bb[6+e]+bb[9+e])/4; d+=(cb-ca)**2; } arc.push(arc[q-1]+Math.sqrt(d)); }
+        const Ltot=arc[arc.length-1]; if(Ltot<50) continue;
+        boardNo++;
+        runs.push({ p, board:boardNo, C, arc, Ltot, si:st.map(li=>SI[k*nL+li]), pw:st.map(li=>PW[k*nL+li]), alongU, cuts:null, fits:null });
+      } } }
+  return runs;
+}
+function cAt(run,x){ const arc=run.arc; let q=1; while(q<arc.length-1 && arc[q]<x) q++; const f=Math.min(1,Math.max(0,(x-arc[q-1])/((arc[q]-arc[q-1])||1)));
+  const out=new Float64Array(12); for(let e=0;e<12;e++) out[e]=run.C[q-1][e]+(run.C[q][e]-run.C[q-1][e])*f; return {cr:out, q:f<0.5?q-1:q}; }
+function stationsIn(run,a,e,maxSt){ const st=[cAt(run,a)]; const inner=[]; for(let q=0;q<run.arc.length;q++) if(run.arc[q]>a && run.arc[q]<e) inner.push(q);
+  const step=maxSt? Math.max(1,Math.ceil(inner.length/maxSt)) : 1; for(let i=0;i<inner.length;i+=step) st.push({cr:run.C[inner[i]], q:inner[i]}); st.push(cAt(run,e)); return st; }
+function pieceGeom(st){ // points (corners + edge mids) and volume
+  const pts=[]; let vol=0;
+  const area=(c)=>{ const d1=[c[6]-c[0],c[7]-c[1],c[8]-c[2]], d2=[c[9]-c[3],c[10]-c[4],c[11]-c[5]]; return 0.5*Math.hypot(d1[1]*d2[2]-d1[2]*d2[1], d1[2]*d2[0]-d1[0]*d2[2], d1[0]*d2[1]-d1[1]*d2[0]); };
+  const cen=(c)=>[0,1,2].map(e=>(c[e]+c[3+e]+c[6+e]+c[9+e])/4);
+  for(let i=0;i<st.length;i++){ const c=st[i].cr;
+    for(let k=0;k<4;k++){ const n=(k+1)%4; pts.push([c[k*3],c[k*3+1],c[k*3+2]], [(c[k*3]+c[n*3])/2,(c[k*3+1]+c[n*3+1])/2,(c[k*3+2]+c[n*3+2])/2]); }
+    if(i>0){ const a=cen(st[i-1].cr), b=cen(c); vol+=0.5*(area(st[i-1].cr)+area(c))*Math.hypot(b[0]-a[0],b[1]-a[1],b[2]-a[2]); } }
+  return {pts, vol};
+}
+function stockCuts(run){ const Lst=stockLen(), off=($('stagger').checked && run.board%2===0)? Lst/2 : 0;
+  const cuts=[0]; for(let x=(off>0?off:Lst); x<run.Ltot-1; x+=Lst) cuts.push(x); cuts.push(run.Ltot); return cuts; }
+
+/* Billet evaluation for an interval of a run. */
+function evalBillet(run,a,e,prm,M,level){
+  const g=pieceGeom(stationsIn(run,a,e, level==='quick'?24:60));
+  const b=Billet.fitBillet(g.pts,{lamT:prm.lamT, allow:prm.allow, level});
+  const cnc=Billet.checkMachine(b,M), waste=1-g.vol/b.volume, rtOk=!isFinite(b.rLam) || b.rLam/prm.lamT>=prm.rt;
+  const status=(!cnc.fits||!cnc.lengthOk||b.cusp)?3 : !rtOk?2 : waste>prm.wasteMax?1 : 0;
+  return { b, cnc, waste, vol:g.vol, rtOk, status, ok:cnc.fits&&cnc.lengthOk&&!b.cusp&&waste<=prm.wasteMax };
+}
+/* Greedy segmentation: longest piece from the current start whose billet fits the CNC opening and the waste target. */
+function segmentRun(run,prm,M){
+  const Lmin=Math.min(800, run.Ltot), cuts=[0], fits=[]; let a=0;
+  const Lmax=M.L? M.L-200 : Infinity;
+  while(a<run.Ltot-1){
+    const end=Math.min(run.Ltot, a+Lmax);
+    let r=evalBillet(run,a,end,prm,M,'quick'); if(r.ok){ cuts.push(end); fits.push(r); a=end; continue; }
+    const lo=Math.min(a+Lmin,end), rlo=evalBillet(run,a,lo,prm,M,'quick');
+    if(!rlo.ok){ cuts.push(lo); fits.push(rlo); a=lo; continue; }
+    let best=lo, bestR=rlo, hi=end;
+    while(hi-best>Math.max(150,0.03*(hi-a))){ const mid=(best+hi)/2, rm=evalBillet(run,a,mid,prm,M,'quick'); if(rm.ok){ best=mid; bestR=rm; } else hi=mid; }
+    if(run.Ltot-best<400 && best<run.Ltot){ const mid=(a+run.Ltot)/2; const rm=evalBillet(run,a,mid,prm,M,'quick'); if(rm.ok){ best=mid; bestR=rm; } }
+    cuts.push(best); fits.push(bestR); a=best; }
+  run.cuts=cuts; run.fits=fits;
+}
+
+/* Phase B: geometry for every piece (and its billet in billet mode). */
+function emitGeometry(runs){
+  const prm=params(), billetMode=prm.route==='billet', gap=4;
+  const pos=[], col=[], idx=[], pv=[], lpos=[], pieces=[], bpos=[], bidx=[], blpos=[];
+  const dense=runs.length>60;
+  for(const run of runs){
+    const p=run.p, r=p.res, c=p.cls, alongU=run.alongU, cuts=run.cuts||(billetMode? [0,run.Ltot] : stockCuts(run)), nP=cuts.length-1;
+    for(let m=0;m<nP;m++){
+      const a=cuts[m]+(m>0?gap/2:0), e=cuts[m+1]-(m<nP-1?gap/2:0); if(e-a<20) continue;
+      const st=stationsIn(run,a,e,0);
+      let Umax=0, kmax=0, gov='–', partial=1;
+      for(const s of st){ const si=run.si[s.q]; const u=c.U[si];
+        if(u>Umax){ Umax=u; gov=billetMode?'lam bend radius':(c.Ub[si]>=c.Uf[si]?'bending stress':'fit across width'); }
+        const kl=Math.abs(alongU? r.knU[si] : r.knV[si]); if(kl>kmax) kmax=kl; partial=Math.min(partial,run.pw[s.q]); }
+      const fit=billetMode&&run.fits? run.fits[m] : null;
+      const bst=billetMode? (fit? fit.status : 9) : -1;
+      const pi=pieces.length, v0=pos.length/3, i0=idx.length, l0=lpos.length/3;
+      const fac=(run.board%2?1:0.82)*(m%2?0.9:1), bcol=bst>=0? hex(BST_C[bst]) : null;
+      for(let sd2=0;sd2<4;sd2++){ const e1=sd2, e2=(sd2+1)%4, base=pos.length/3;
+        for(const s of st){ const cc=bcol||timberColor(p, run.si[s.q]);
+          for(const ce of [e1,e2]){ pos.push(s.cr[ce*3],s.cr[ce*3+1],s.cr[ce*3+2]); col.push(cc[0]*fac,cc[1]*fac,cc[2]*fac); pv.push(pi); } }
+        for(let q=0;q<st.length-1;q++){ const v=base+q*2; idx.push(v,v+1,v+3,v,v+3,v+2); } }
+      for(const s of [st[0], st[st.length-1]]){ const cc=bcol||timberColor(p, run.si[s.q]), base=pos.length/3;
+        for(let ce=0;ce<4;ce++){ pos.push(s.cr[ce*3],s.cr[ce*3+1],s.cr[ce*3+2]); col.push(cc[0]*fac*0.92,cc[1]*fac*0.92,cc[2]*fac*0.92); pv.push(pi); }
+        idx.push(base,base+1,base+2,base,base+2,base+3);
+        for(let ce=0;ce<4;ce++){ const n2=(ce+1)%4; lpos.push(s.cr[ce*3],s.cr[ce*3+1],s.cr[ce*3+2], s.cr[n2*3],s.cr[n2*3+1],s.cr[n2*3+2]); } }
+      for(let ce=(dense?2:0);ce<4;ce++) for(let q=0;q<st.length-1;q++){ const A2=st[q].cr, B2=st[q+1].cr; lpos.push(A2[ce*3],A2[ce*3+1],A2[ce*3+2],B2[ce*3],B2[ce*3+1],B2[ce*3+2]); }
+      let bv0=bpos.length/3, bi0=bidx.length;
+      if(fit){ const R=Billet.billetRings(fit.b, 24);
+        for(let f=0;f<4;f++){ const base=bpos.length/3; for(const ring of R){ bpos.push(...ring[f], ...ring[(f+1)%4]); }
+          for(let q=0;q<R.length-1;q++){ const v=base+q*2; bidx.push(v,v+1,v+3,v,v+3,v+2); } }
+        for(const ring of [R[0],R[R.length-1]]){ const base=bpos.length/3; for(let f=0;f<4;f++) bpos.push(...ring[f]); bidx.push(base,base+1,base+2,base,base+2,base+3);
+          for(let f=0;f<4;f++) blpos.push(...ring[f], ...ring[(f+1)%4]); }
+        for(let f=0;f<4;f++) for(let q=0;q<R.length-1;q++) blpos.push(...R[q][f], ...R[q+1][f]); }
+      const len=cuts[m+1]-cuts[m];
+      pieces.push({ board:run.board, piece:m+1, nPieces:nP, len, stockFt:+$('stockLen').value, Umax, Rb:kmax>0?1/kmax:Infinity, gov,
+        ripped:partial<0.98, status: billetMode? BST_L[bst].toLowerCase() : (Umax<=0.8?'ok':Umax<=1?'near limit':Umax<=1.5?'fails':'fails badly'),
+        bst, fit, patch:p.name, v0, v1:pos.length/3, i0, i1:idx.length, l0, l1:lpos.length/3, bv0, bv1:bpos.length/3, bi0, bi1:bidx.length });
+    }
+  }
+  boardGroup.clear(); if(S.boards){ S.boards.geo.dispose(); S.boards.lgeo.dispose(); }
+  const geo=new THREE.BufferGeometry();
+  geo.setAttribute('position',new THREE.Float32BufferAttribute(pos,3)); geo.setAttribute('color',new THREE.Float32BufferAttribute(col,3));
+  geo.setIndex(pos.length/3>65535? new THREE.Uint32BufferAttribute(idx,1) : new THREE.Uint16BufferAttribute(idx,1)); geo.computeVertexNormals();
+  const lgeo=new THREE.BufferGeometry(); lgeo.setAttribute('position',new THREE.Float32BufferAttribute(lpos,3));
+  const fade=Math.min(1, Math.max(0.18, 45/Math.max(1,runs.length))); EDGE_GHOST.opacity=0.5*fade; EDGE_SHADE.opacity=Math.max(0.12,0.75*fade);
+  const useGhost=S.ghost && !billetMode;
+  const mesh=new THREE.Mesh(geo, useGhost?GHOST_MAT:SHADE_MAT), lines=new THREE.LineSegments(lgeo, useGhost?EDGE_GHOST:EDGE_SHADE);
+  boardGroup.add(mesh, lines);
+  let bmesh=null, blines=null;
+  if(bpos.length){ const bg=new THREE.BufferGeometry(); bg.setAttribute('position',new THREE.Float32BufferAttribute(bpos,3));
+    bg.setIndex(bpos.length/3>65535? new THREE.Uint32BufferAttribute(bidx,1) : new THREE.Uint16BufferAttribute(bidx,1)); bg.computeVertexNormals();
+    bmesh=new THREE.Mesh(bg,BILLET_MAT); bmesh.renderOrder=5; const blg=new THREE.BufferGeometry(); blg.setAttribute('position',new THREE.Float32BufferAttribute(blpos,3));
+    blines=new THREE.LineSegments(blg,BILLET_EDGE); blines.renderOrder=6; bmesh.visible=blines.visible=S.showBillets; boardGroup.add(bmesh,blines); }
+  const linear=pieces.reduce((a,q)=>a+q.len,0), Lst=stockLen();
+  const tot={ members:runs.length, pieces:pieces.length, linear, waste:1-linear/(pieces.length*Lst||1),
+    failing:pieces.filter(q=>billetMode? q.bst>=2 : q.Umax>1).length, near:pieces.filter(q=>q.Umax>0.8&&q.Umax<=1).length, ripped:pieces.filter(q=>q.ripped).length,
+    full:pieces.filter(q=>q.len>=Lst-1).length };
+  if(billetMode) tot.billet=billetTotals(pieces,prm);
+  S.boards={ pieces, geo, lgeo, mesh, lines, bmesh, blines, pv:Int32Array.from(pv), tot, pos, idx, bpos, bidx, billetMode };
+  S.sel=-1; showPick(); return S.boards;
+}
+
+/* Lam stock and totals for billet mode. */
+function billetTotals(pieces,prm){
+  const ok=pieces.filter(q=>q.fit); let bVol=0, pVol=0, glue=0, layers=0, lin2x=0; const radii=[], layerRows=[];
+  const across=(w)=>Math.ceil(w/(prm.lamStockD-10));
+  for(const q of ok){ const f=q.fit, b=f.b; bVol+=b.volume; pVol+=f.vol; glue+=b.lamCount-1; layers+=b.lamCount;
+    if(isFinite(b.R)) radii.push(b.R);
+    const n=across(b.width), ang=isFinite(b.R)? b.length/b.R : 0;
+    for(let i=0;i<b.lamCount;i++){ const dmid=b.ext.dLow+(i+0.5)*b.lamT, L=(isFinite(b.R)? (b.R-dmid)*ang : b.length)+150;
+      lin2x+=L*n/prm.lamPerBoard; layerRows.push([q.board,q.piece,i+1,L,n]); } }
+  radii.sort((a,b)=>a-b); let fam=0, last=-Infinity; for(const R of radii){ if(R>last*1.05){ fam++; last=R; } }
+  const straight=ok.length-radii.length;
+  return { billets:ok.length, bVol, pVol, waste:bVol? 1-pVol/bVol : 0, glue, layers, lin2x, boards2x:Math.ceil(lin2x/stockLen()), families:fam+(straight?1:0), layerRows,
+    cncFail:ok.filter(q=>q.bst===3).length, lamFail:ok.filter(q=>q.bst===2).length, overWaste:ok.filter(q=>q.bst===1).length, pending:pieces.length-ok.length };
+}
+
+/* Billet job: segment asynchronously (quick fits), then refine each billet (medium fit) in the background. */
+let jobSeq=0;
+function setPill(t){ const el=$('jobpill'); if(!t){ el.style.display='none'; return; } el.textContent=t; el.style.display=''; }
+function startBilletJob(){
+  const prm=params(), M=machine(), runs=prepareRuns(prm), job={id:++jobSeq, runs, i:0, prm, M, refine:null};
+  S.job=job; S.runs=runs; emitGeometry(runs); refreshUI();
+  const step=()=>{ if(S.job!==job) return; const t0=performance.now();
+    while(job.i<runs.length && performance.now()-t0<60){ segmentRun(runs[job.i],prm,M); job.i++; }
+    if(job.i<runs.length){ setPill(`Fitting billets · member ${job.i} of ${runs.length}`); setTimeout(step,0); return; }
+    emitGeometry(runs); refreshUI();
+    job.refine=[]; runs.forEach(run=>run.fits.forEach((f,m)=>job.refine.push([run,m])));
+    if(job.refine.length>240){ setPill(''); S.job=null; return; }
+    job.r=0; setTimeout(refine,0); };
+  const refine=()=>{ if(S.job!==job) return; const t0=performance.now();
+    while(job.r<job.refine.length && performance.now()-t0<120){ const [run,m]=job.refine[job.r++];
+      const a=run.cuts[m], e=run.cuts[m+1], old=run.fits[m], r2=evalBillet(run,a,e,prm,M,'medium');
+      if(r2.status<old.status || (r2.status===old.status && r2.b.volume<old.b.volume)) run.fits[m]=r2; }
+    if(job.r<job.refine.length){ setPill(`Refining billets · ${job.r} of ${job.refine.length}`); setTimeout(refine,0); return; }
+    setPill(''); S.job=null; emitGeometry(runs); refreshUI(); };
+  setPill(`Fitting billets · ${runs.length} members`); setTimeout(step,30);
+}
+function finishBilletSync(){ // for exports: complete segmentation without waiting
+  const job=S.job; if(!S.runs) { const prm=params(); S.runs=prepareRuns(prm); }
+  const prm=params(), M=machine(); for(const run of S.runs) if(!run.cuts) segmentRun(run,prm,M);
+  S.job=null; setPill(''); emitGeometry(S.runs); refreshUI();
+}
+function buildBoards(){
+  if(params().route==='billet'){ startBilletJob(); return S.boards; }
+  S.job=null; setPill(''); S.runs=prepareRuns(params()); return emitGeometry(S.runs);
+}
+function ensureBoards(){
+  if(params().route==='billet'){ if(!S.runs || S.runs.some(r=>!r.cuts) || S.job) finishBilletSync(); return S.boards; }
+  if(!S.boards) buildBoards(); return S.boards; }
+function setGhost(on){ S.ghost=on; if(S.boards && !S.boards.billetMode){ S.boards.mesh.material=on?GHOST_MAT:SHADE_MAT; S.boards.lines.material=on?EDGE_GHOST:EDGE_SHADE; }
+  document.querySelectorAll('[data-ghost]').forEach(b=>b.classList.toggle('on',(b.dataset.ghost==='1')===on)); }
+function setShowBillets(on){ S.showBillets=on; if(S.boards&&S.boards.bmesh){ S.boards.bmesh.visible=S.boards.blines.visible=on; } $('billetChip').classList.toggle('on',on); }
+
+/* selection */
+let selObjs=[];
+function showPick(){
+  for(const o of selObjs){ boardGroup.remove(o); if(o.geometry && o.userData.own) o.geometry.dispose(); } selObjs=[];
+  const card=$('pick');
+  if(S.sel<0 || !S.boards || !S.boards.pieces[S.sel]){ card.style.display='none'; $('viewport').classList.remove('picking'); return; }
+  const q=S.boards.pieces[S.sel], B=S.boards;
+  const sg=new THREE.BufferGeometry(); sg.setAttribute('position',B.geo.attributes.position); sg.setAttribute('color',B.geo.attributes.color); sg.setAttribute('normal',B.geo.attributes.normal);
+  sg.setIndex(B.idx.slice(q.i0,q.i1)); const sm=new THREE.Mesh(sg,SEL_MAT); sm.userData.own=true;
+  const lg=new THREE.BufferGeometry(); lg.setAttribute('position',new THREE.Float32BufferAttribute(B.lgeo.attributes.position.array.slice(q.l0*3,q.l1*3),3));
+  const ll=new THREE.LineSegments(lg,SEL_EDGE); ll.renderOrder=10; ll.userData.own=true;
+  boardGroup.add(sm,ll); selObjs=[sm,ll];
+  const id=`${B.billetMode?'Piece':'Member'} B${String(q.board).padStart(3,'0')} · piece ${q.piece} of ${q.nPieces}`;
+  if(B.billetMode){ const f=q.fit, prm=params();
+    if(!f){ card.innerHTML=`<button class="x" aria-label="Close">×</button><div class="k">${id}</div><div class="v">Fitting billet…</div>`; }
+    else { const b=f.b, cls=q.bst===0?'ok':q.bst===1?'mid':'bad', tNeed=isFinite(b.rLam)? b.rLam/prm.rt : Infinity;
+      card.innerHTML=`<button class="x" aria-label="Close">×</button><div class="k">${id}</div>
+      <div class="v ${cls}">${BST_L[q.bst]} · ${(f.waste*100).toFixed(0)}% waste</div>
+      <table><tr><td>Piece length</td><td>${(q.len/1000).toFixed(2)} m · ${fmtFtIn(q.len)}</td></tr>
+      <tr><td>Billet radius</td><td>${isFinite(b.R)?fmtM(b.R,2):'straight'}</td></tr>
+      <tr><td>Lams</td><td>${b.lamCount} × ${prm.lamT} mm</td></tr>
+      <tr><td>Billet W × D × L</td><td>${b.width.toFixed(0)} × ${b.depth.toFixed(0)} × ${(b.length/1000).toFixed(2)} m</td></tr>
+      <tr><td>Tightest lam</td><td>R/t ${isFinite(b.rLam)?(b.rLam/prm.lamT).toFixed(0):'–'}${f.rtOk?'':` · needs ≤ ${tNeed.toFixed(0)} mm`}</td></tr>
+      <tr><td>CNC opening fit</td><td>${f.cnc.fits?`${f.cnc.best.label}, ${f.cnc.best.margin.toFixed(0)} mm spare`:`short by ${(-f.cnc.best.margin).toFixed(0)} mm`}</td></tr></table>`; }
+  } else {
+    const cls=q.Umax>1?'bad':q.Umax>0.8?'mid':'ok';
+    card.innerHTML=`<button class="x" aria-label="Close">×</button><div class="k">${id}</div>
+    <div class="v ${cls}">${q.status[0].toUpperCase()+q.status.slice(1)}${q.Umax>0?` · ${(q.Umax*100).toFixed(0)}% of limit`:''}</div>
+    <table><tr><td>Cut length</td><td>${(q.len/1000).toFixed(3)} m · ${fmtFtIn(q.len)}</td></tr>
+    <tr><td>Stock</td><td>${S.size.replace('x','×')} · ${q.stockFt} ft${q.ripped?' · ripped narrower':''}</td></tr>
+    <tr><td>Tightest bend along</td><td>${fmtM(q.Rb,1)}</td></tr>
+    <tr><td>Bend limit (stock)</td><td>${fmtM(S.stats.stockRmin,1)}</td></tr>
+    <tr><td>Governs</td><td>${q.gov}</td></tr></table>`; }
+  card.querySelector('.x').onclick=()=>{ S.sel=-1; showPick(); };
+  card.style.display=''; $('viewport').classList.add('picking');
+}
+const ray=new THREE.Raycaster(); let downAt=null;
+renderer.domElement.addEventListener('pointerdown',e=>{ downAt=[e.clientX,e.clientY]; });
+renderer.domElement.addEventListener('pointerup',e=>{
+  if(!downAt || !S.preview || !S.boards) return; const moved=Math.hypot(e.clientX-downAt[0],e.clientY-downAt[1]); downAt=null; if(moved>6) return;
+  const rc=renderer.domElement.getBoundingClientRect();
+  ray.setFromCamera(new THREE.Vector2(((e.clientX-rc.left)/rc.width)*2-1, -((e.clientY-rc.top)/rc.height)*2+1), camera);
+  const hit=ray.intersectObject(S.boards.mesh,false)[0];
+  if(!hit){ S.sel=-1; showPick(); return; }
+  const v=S.boards.idx[hit.faceIndex*3]; S.sel=S.boards.pv[v]; showPick();
+});
+function cutListHTML(){
+  if(!S.preview || !S.boards) return '<p class="note">Turn on <b>Preview timber mapping</b> to lay out members and get a cut list.</p>';
+  const t=S.boards.tot, Lft=+$('stockLen').value;
+  if(S.boards.billetMode){ const b=t.billet, prm=params();
+    if(!b.billets) return '<p class="note">Fitting billets…</p>';
+    return `<div class="cl"><div><span>Billets</span><b>${b.billets}${b.pending?` (+${b.pending})`:''}</b></div><div><span>Radius families (±5%)</span><b>${b.families}</b></div>
+      <div><span>Billet / part volume</span><b>${(b.bVol/1e9).toFixed(2)} / ${(b.pVol/1e9).toFixed(2)} m³</b></div><div><span>CNC waste</span><b class="${b.waste>prm.wasteMax?'bad':'ok'}">${(b.waste*100).toFixed(0)}%</b></div>
+      <div><span>Won't fit CNC</span><b class="${b.cncFail?'bad':'ok'}">${b.cncFail}</b></div><div><span>Lams too thick</span><b class="${b.lamFail?'bad':'ok'}">${b.lamFail}</b></div>
+      <div><span>Lam layers / glue lines</span><b>${b.layers} / ${b.glue}</b></div><div><span>Over waste target</span><b class="${b.overWaste?'bad':'ok'}">${b.overWaste}</b></div>
+      <div><span>${prm.lamStock.replace('x','×')} to buy (${Lft} ft)</span><b>${b.boards2x}</b></div><div><span>Lam stock, linear</span><b>${(b.lin2x/1000).toFixed(0)} m · ${(b.lin2x/FT).toFixed(0)} ft</b></div></div>
+      <p class="note">Lam boards are finger-jointed to length and edge-glued across the billet width. Tap a piece to see its billet.</p>`; }
+  return `<div class="cl"><div><span>Members</span><b>${t.members}</b></div><div><span>Pieces</span><b>${t.pieces}</b></div>
+    <div><span>${S.size.replace('x','×')} × ${Lft} ft to buy</span><b>${t.pieces}</b></div><div><span>Linear length</span><b>${(t.linear/1000).toFixed(1)} m · ${(t.linear/FT).toFixed(0)} ft</b></div>
+    <div><span>Full-length pieces</span><b>${t.full}</b></div><div><span>Offcut waste</span><b>${(t.waste*100).toFixed(0)}%</b></div>
+    <div><span>Pieces that fail</span><b class="${t.failing?'bad':'ok'}">${t.failing}</b></div><div><span>Ripped edge pieces</span><b>${t.ripped}</b></div></div>
+    <p class="note">Tap a member in the 3D view to inspect it.</p>`;
+}
+
+/* ---------- UI refresh ---------- */
+function refreshUI(){
+  const st=S.stats, prm=params();
+  $('empty').style.display='none'; $('views').style.display=''; $('verdict').style.display=''; $('legend').style.display=''; $('stats').style.display='';
+  updateDerived();
+  $('vV').textContent=st.verdict;
+  $('vD').textContent=(st.verdictDetail? st.verdictDetail+' · ':'') + `${(st.doubleFrac*100).toFixed(0)}% of area doubly curved`;
+  $('verdict').classList.toggle('warn', st.verdict!=='Doubly curved');
+  $('lgT').textContent=mapTitle(S.map); $('lgS').textContent=mapSubtitle();
+  const lc=$('lgC'); lc.height=(S.map==='type'||S.map==='timber')?(S.stats.fabFrac[4]>0&&S.map==='timber'?102:68):60; drawLegend(lc,S.map);
+  // objects list
+  const ol=$('objlist'); ol.innerHTML='';
+  if(S.patches.length){ $('objSec').style.display=''; $('objCount').textContent=S.patches.length+' surf.';
+    S.patches.forEach((p,i)=>{ const d=document.createElement('div');
+      d.innerHTML=`<input type="checkbox" ${p.include?'checked':''}><span class="nm" title="${p.name}">${p.name}</span><span class="ty">${p.kind}</span>`;
+      d.querySelector('input').onchange=(e)=>{ p.include=e.target.checked; if(!S.patches.some(q=>q.include)){ p.include=true; e.target.checked=true; return; } runAnalysis(false); };
+      ol.appendChild(d); }); }
+  const fail=st.fabFrac[2]+st.fabFrac[3]+st.fabFrac[4];
+  const items=[
+    ['Surface area', (st.area/1e6).toFixed(2)+' m²', `${S.patches.filter(p=>p.res).length} surface(s)`],
+    ['Bounding box', `${((st.bbox[3]-st.bbox[0])/1000).toFixed(2)} × ${((st.bbox[4]-st.bbox[1])/1000).toFixed(2)} × ${((st.bbox[5]-st.bbox[2])/1000).toFixed(2)}`, 'metres, x × y × z'],
+    ['Timber volume', (st.volume/1e9).toFixed(2)+' m³', `at ${st.T.toFixed(0)} mm thick`],
+    ['Tightest radius', fmtM(st.Rmin), 'any direction · black dot'],
+    ['Gaussian K range', `${fmtK(st.Kmin)} … ${fmtK(st.Kmax)}`, '1/m²'],
+    S.route==='billet'? ['Lam bend limit', fmtM(st.stockRmin,1), `${prm.lamT} mm lams · R/t ≥ ${prm.rt}`] : [`${S.size} bend limit`, fmtM(st.stockRmin,1), `${S.orientLabel()} · bends through ${st.h} mm`],
+    statMembers(st),
+    [S.route==='billet'? 'Lam check' : `${S.size} feasible`, `${(st.feasible*100).toFixed(0)}%`, fail>0.001?`${(fail*100).toFixed(0)}% fails · ${st.governing}`:(S.route==='billet'?'all lams bend OK':'all area bends OK'), fail>0.001?'bad':'ok'],
+  ];
+  $('stats').innerHTML=items.map(([k,v,d,c])=>`<div class="stat"><div class="k">${k}</div><div class="v ${c||''}">${v}</div><div class="d">${d}</div></div>`).join('');
+  ['exPdf','exPng','exZip','ex3dm'].forEach(id=>$(id).disabled=!S.downloads);
+  $('previewBtn').disabled=false; $('previewBtn').classList.toggle('on',S.preview);
+  $('previewBtn').textContent=S.preview?'Exit timber preview':'Preview timber mapping';
+  $('cutlist').innerHTML=cutListHTML();
+  const tb=document.querySelector('#cmp tbody'); tb.innerHTML='';
+  const billetR=S.route==='billet';
+  $('cmpTitle').textContent=billetR?'Lamination comparison':'Size comparison'; $('cmpH1').textContent=billetR?'Lam':'Stock'; $('cmpH2').textContent=billetR?'From 2×':'Panel';
+  $('cmpNote').textContent=billetR?'Share of surface area each lamination thickness can bend to along the members. Tap a row to select it.':'Share of surface area each size can be bent to. Tap a row to select that size.';
+  for(const c of S.compare){ const tr=document.createElement('tr'); if(c.size===(billetR?$('lamT').value:S.size)) tr.className='on';
+    const cls=c.feasible>=0.999?'ok':c.feasible>=0.5?'mid':'bad';
+    tr.innerHTML=`<td>${c.label}</td><td>${billetR?c.per+' per board':c.T.toFixed(0)+' mm'}</td><td>${fmtM(c.Rmin,1)}</td><td class="${cls}">${(c.feasible*100).toFixed(0)}%</td>`;
+    tr.onclick=()=>selectSize(c.size); tb.appendChild(tr); }
+}
+
+function statMembers(st){
+  const B=S.boards;
+  if(S.route==='billet'){ if(S.preview&&B&&B.tot.billet&&B.tot.billet.billets){ const b=B.tot.billet, bad=b.cncFail+b.lamFail;
+      return ['Billets', `${b.billets} · ${(b.waste*100).toFixed(0)}% waste`, `${b.families} radius families · ${bad} won't work`, bad?'bad':'ok']; }
+    return ['Members', boardsText(), `${st.b} mm wide · preview to fit billets`]; }
+  return S.preview&&B? ['Members', `${B.tot.members} · ${B.tot.pieces} pcs`, `${B.tot.pieces} × ${$('stockLen').value} ft stock · ${B.tot.failing} fail`, B.tot.failing?'bad':'ok'] : ['Boards', boardsText(), `${st.b} mm wide on the surface`]; }
+function boardsText(){ const ps=S.patches.filter(p=>p.res); const n=ps.reduce((a,p)=>a+(p.boardCount||0),0);
+  const dirs=[...new Set(ps.map(p=>p.cls.dir.toUpperCase()))].join('/'); return `${n} × along ${dirs}`; }
+function updateDerived(){ const p=params(), sd=Core.stockDims(p);
+  $('Ttxt').textContent=`${sd.T.toFixed(0)} mm`; $('Rstocktxt').textContent=fmtM(sd.Rmin,1);
+  $('TtxtL').textContent=p.route==='billet'?'Member depth':'Panel thickness'; $('RstockL').textContent=p.route==='billet'?'Tightest lam bend':'Tightest bend for this stock';
+  $('orientHelp').textContent=p.orient==='edge'?`depth ${p.d} mm is the panel thickness`:`${p.t} mm thick boards, ${p.d} mm wide`; }
+function selectSize(k){ if(S.route==='billet'){ $('lamT').value=k; updateDerived(); reclassify(); return; } S.size=k; document.querySelectorAll('[data-size]').forEach(b=>b.classList.toggle('on',b.dataset.size===k)); updateDerived(); reclassify(); }
+function setPreview(on){ S.preview=on; if(on){ S.prevMap=S.map; S.map='timber'; } else if(S.prevMap){ S.map=S.prevMap; }
+  document.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x.dataset.map===S.map));
+  if(S.stats){ buildScene(); refreshUI(); } }
+
+/* ---------- events ---------- */
+const drop=$('drop');
+$('file').onchange=(e)=>{ const f=e.target.files[0]; if(f) loadFile(f); e.target.value=''; };
+['dragenter','dragover'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.add('over');}));
+['dragleave','drop'].forEach(t=>drop.addEventListener(t,e=>{e.preventDefault();drop.classList.remove('over');}));
+drop.addEventListener('drop',e=>{ const f=e.dataTransfer.files[0]; if(f) loadFile(f); });
+document.querySelectorAll('[data-sample]').forEach(b=>b.onclick=()=>loadSample(b.dataset.sample));
+document.querySelectorAll('[data-map]').forEach(b=>b.onclick=()=>{ S.map=b.dataset.map; if(S.preview && S.map!=='timber'){ S.preview=false; buildScene(); }
+  document.querySelectorAll('[data-map]').forEach(x=>x.classList.toggle('on',x===b)); if(S.stats){ recolor(); refreshUI(); } });
+let tmr=null; const deb=(fn)=>{ clearTimeout(tmr); tmr=setTimeout(fn,250); };
+['layers','E','fb','tol','flatR','mode','orient','dir'].forEach(id=>$(id).addEventListener('input',()=>{ if(id==='E'||id==='fb') $('species').value='custom'; updateDerived(); deb(reclassify); }));
+$('species').addEventListener('change',()=>{ const sp=SPECIES[$('species').value]; if(sp){ $('E').value=sp.E; $('fb').value=sp.fb; } updateDerived(); reclassify(); });
+document.querySelectorAll('[data-size]').forEach(b=>b.onclick=()=>selectSize(b.dataset.size));
+$('previewBtn').onclick=()=>setPreview(!S.preview);
+document.querySelectorAll('[data-route]').forEach(b=>b.onclick=()=>{ S.route=b.dataset.route; document.body.classList.toggle('route-billet',S.route==='billet');
+  document.querySelectorAll('[data-route]').forEach(x=>x.classList.toggle('on',x===b)); S.runs=null; S.boards=null; updateDerived(); reclassify(); });
+['memW','memD','lamT','rt'].forEach(id=>$(id).addEventListener('input',()=>{ updateDerived(); deb(reclassify); }));
+const rebillet=()=>{ if(S.route==='billet'&&S.preview&&S.stats){ buildBoards(); refreshUI(); } else S.runs=null; };
+['allow','wasteMax','mW','mH','mL'].forEach(id=>$(id).addEventListener('input',()=>deb(rebillet)));
+$('lamStock').addEventListener('change',()=>{ if(S.boards&&S.boards.billetMode){ emitGeometry(S.runs); refreshUI(); } });
+$('billetChip').onclick=()=>setShowBillets(!S.showBillets);
+['stockLen','stagger'].forEach(id=>$(id).addEventListener('change',()=>{ if(S.preview&&S.stats){ if(S.route==='billet'&&S.runs) emitGeometry(S.runs); else buildBoards(); refreshUI(); } else S.boards=null; }));
+document.querySelectorAll('[data-ghost]').forEach(b=>b.onclick=()=>setGhost(b.dataset.ghost==='1'));
+updateDerived();
+['units','flip','density'].forEach(id=>$(id).addEventListener('change',()=>runAnalysis(id==='units')));
+['solid','edges'].forEach(id=>$(id).addEventListener('change',()=>{ if(S.stats) buildScene(); }));
+
+/* ---------- exports ---------- */
+S.standalone=!window.claude;
+if(S.standalone) S.downloads={ save: async({filename,data})=>{ const url=URL.createObjectURL(data instanceof Blob? data : new Blob([data]));
+  const a=document.createElement('a'); a.href=url; a.download=filename; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),4000); return {status:'saved'}; } };
+(async()=>{ try{ if(!S.standalone && claude.use){ S.downloads=await claude.use('downloads'); } }catch(e){}
+  if(!S.downloads) $('exNote').textContent='Downloads are not available in this view. Open the page in claude.ai to export.';
+  else if(S.stats) refreshUI(); })();
+
+async function save(filename, data){
+  try{ await S.downloads.save({filename, data}); }
+  catch(e){ if(e && e.code==='declined') return; setStatus('Export failed: '+(e&&e.message||e.code||e), true); }
+}
+function baseName(){ return (S.fileName||'surface').replace(/\.3dm$/i,'').replace(/[^\w\- ]+/g,'').trim().replace(/\s+/g,'_')||'surface'; }
+
+const off={ r:null };
+function snapshot(map, W, H){
+  if(!off.r){ off.r=new THREE.WebGLRenderer({antialias:true, preserveDrawingBuffer:true}); off.r.setClearColor(0xffffff); }
+  off.r.setPixelRatio(1); off.r.setSize(W,H,false);
+  const cam=camera.clone(); cam.aspect=W/H; cam.updateProjectionMatrix();
+  const prev=S.map; S.map=map; recolor();
+  const gv=group.visible, bv=boardGroup.visible; if(S.preview){ boardGroup.visible=(map==='timber'); group.visible=!boardGroup.visible; }
+  sun.position.copy(cam.position); off.r.render(scene,cam);
+  group.visible=gv; boardGroup.visible=bv;
+  const url=off.r.domElement.toDataURL('image/jpeg',0.92);
+  S.map=prev; recolor(); return url;
+}
+function legendImage(map){ const c=document.createElement('canvas'); c.width=640; c.height=(map==='type'||map==='timber')?(S.stats&&S.stats.fabFrac[4]>0&&map==='timber'?102:68):60; drawLegend(c,map); return c.toDataURL('image/png'); }
+
+$('exPng').onclick=guard(async()=>{
+  const W=2400,H=1600; const img=new Image(); img.src=snapshot(S.map,W,H); await img.decode();
+  const c=document.createElement('canvas'); c.width=W; c.height=H; const x=c.getContext('2d');
+  x.drawImage(img,0,0);
+  x.fillStyle='rgba(255,255,255,.94)'; x.fillRect(40,H-200,760,160);
+  x.fillStyle='#1d1d1b'; x.font='600 30px "IBM Plex Sans", sans-serif'; x.fillText(mapTitle(S.map),64,H-150);
+  x.font='400 21px "IBM Plex Sans", sans-serif'; x.fillStyle='#6b6a65'; x.fillText(mapSubtitle(),64,H-118);
+  const lg=document.createElement('canvas'); lg.width=700; lg.height=70; drawLegend(lg,S.map); x.drawImage(lg,64,H-100);
+  x.font='500 22px "IBM Plex Mono", monospace'; x.fillStyle='#1d1d1b'; x.textAlign='right';
+  x.fillText(`${S.fileName} · ${S.stats.verdict}`, W-40, 54);
+  const blob=await new Promise(r=>c.toBlob(r,'image/png')); await save(`${baseName()}_${S.map}.png`, blob);
+});
+
+$('exPdf').onclick=guard(async()=>{
+  const { jsPDF } = window.jspdf; const st=S.stats, prm=params(); ensureBoards();
+  const pdf=new jsPDF({orientation:'landscape',unit:'mm',format:'a3'});
+  const clean=(t)=>String(t).replace(/²/g,'2').replace(/³/g,'3').replace(/−/g,'-').replace(/…/g,'...').replace(/\u2019/g,"'");
+  const _txt=pdf.text.bind(pdf); pdf.text=(t,...a)=>_txt(Array.isArray(t)?t.map(clean):clean(t),...a);
+  const ink=[29,29,27], mute=[107,106,101], timber=[168,105,46];
+  pdf.setFillColor(29,29,27); pdf.rect(0,0,420,22,'F');
+  pdf.setTextColor(255,255,255); pdf.setFont('helvetica','bold'); pdf.setFontSize(15); pdf.text('Surface curvature analysis', 14, 14);
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(9.5);
+  pdf.text(`${S.fileName}   ·   ${new Date().toLocaleDateString()}   ·   Doubly curved timber — closed-loop fabrication`, 406, 14, {align:'right'});
+  const maps=['gauss','radius','type','timber'], iw=128, ih=88, gx=14, gy=30;
+  maps.forEach((m,k)=>{ const x=gx+(k%2)*(iw+8), y=gy+Math.floor(k/2)*(ih+42);
+    pdf.addImage(snapshot(m,1280,880),'JPEG',x,y,iw,ih); pdf.setDrawColor(220,216,207); pdf.rect(x,y,iw,ih);
+    pdf.setTextColor(...ink); pdf.setFont('helvetica','bold'); pdf.setFontSize(10.5); pdf.text(mapTitle(m), x, y+ih+6);
+    const prevMap=S.map; S.map=m; const sub=mapSubtitle(); S.map=prevMap;
+    pdf.setFont('helvetica','normal'); pdf.setFontSize(8); pdf.setTextColor(...mute); pdf.text(sub, x, y+ih+10.5);
+    pdf.addImage(legendImage(m),'PNG',x,y+ih+13,96,(m==='type'||m==='timber')?(st.fabFrac[4]>0&&m==='timber'?15.3:10.2):9); });
+  // right column
+  let x=290, y=32; const col=116;
+  pdf.setTextColor(...timber); pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.text('CLASSIFICATION', x, y);
+  pdf.setTextColor(...(st.verdict==='Doubly curved'?ink:[201,64,64])); pdf.setFontSize(20); pdf.text(st.verdict, x, y+9);
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(...mute);
+  pdf.text(`${st.verdictDetail? st.verdictDetail+' · ':''}${(st.doubleFrac*100).toFixed(0)}% of area doubly curved`, x, y+15);
+  y+=26;
+  const block=(title, rows)=>{ pdf.setTextColor(...timber); pdf.setFont('helvetica','bold'); pdf.setFontSize(8); pdf.text(title.toUpperCase(), x, y); y+=2.5;
+    pdf.setDrawColor(220,216,207); pdf.line(x,y,x+col,y); y+=5;
+    rows.forEach(([k,v,bad])=>{ pdf.setFont('helvetica','normal'); pdf.setFontSize(9); pdf.setTextColor(...mute); pdf.text(k,x,y);
+      pdf.setFont('courier','bold'); pdf.setTextColor(...(bad?[201,64,64]:ink)); pdf.text(String(v), x+col, y, {align:'right'}); y+=5.6; }); y+=5; };
+  block('Geometry', [
+    ['Surfaces analysed', S.patches.filter(p=>p.res).length], ['Surface area', (st.area/1e6).toFixed(2)+' m²'],
+    ['Bounding box (m)', `${((st.bbox[3]-st.bbox[0])/1000).toFixed(2)} x ${((st.bbox[4]-st.bbox[1])/1000).toFixed(2)} x ${((st.bbox[5]-st.bbox[2])/1000).toFixed(2)}`],
+    ['Source units', S.fileUnitName], ['Analysis samples', st.samples.toLocaleString()] ]);
+  block('Curvature', [
+    ['Gaussian K min / max (1/m²)', `${fmtK(st.Kmin)} / ${fmtK(st.Kmax)}`], ['Mean H min / max (1/m)', `${fmtH(st.Hmin)} / ${fmtH(st.Hmax)}`],
+    ['Tightest bending radius', fmtM(st.Rmin)], ['  at (m)', st.RminAt? st.RminAt.map(v=>(v/1000).toFixed(2)).join(', ') : '–'],
+    ['Synclastic / anticlastic', `${(st.typeFrac[2]*100).toFixed(0)}% / ${(st.typeFrac[3]*100).toFixed(0)}%`],
+    ['Singly curved / planar', `${(st.typeFrac[1]*100).toFixed(0)}% / ${(st.typeFrac[0]*100).toFixed(0)}%`] ]);
+  if(S.route==='billet'){ const B=S.boards, b=B&&B.tot.billet, M=machine();
+    block(`Glulam billet route · ${prm.lamT} mm lams`, [
+      ['Member width × depth', `${prm.memberW} x ${prm.memberD} mm`], ['Lam R/t limit / tightest lam bend', `${prm.rt} / ${fmtM(st.stockRmin,1)}`],
+      ['CNC opening (W x H / max length)', `${M.w} x ${M.h} mm / ${M.L? (M.L/1000).toFixed(0)+' m':'none'}`], ['Waste target / allowance', `${(prm.wasteMax*100).toFixed(0)}% / ${prm.allow} mm`],
+      ...(b&&b.billets? [['Members / billets', `${B.tot.members} / ${b.billets}`], ['Billet / part volume', `${(b.bVol/1e9).toFixed(2)} / ${(b.pVol/1e9).toFixed(2)} m³`],
+        ['CNC waste', (b.waste*100).toFixed(0)+' %', b.waste>prm.wasteMax], ['Radius families (±5%)', b.families],
+        ["Won't fit CNC / lams too thick", `${b.cncFail} / ${b.lamFail}`, b.cncFail+b.lamFail>0],
+        ['Lam layers / glue lines', `${b.layers} / ${b.glue}`], [`Lam stock to buy (${prm.lamStock}, ${$('stockLen').value} ft)`, `${b.boards2x} pcs`]] : []),
+      ['Area where lams bend OK', `${((st.fabFrac[0]+st.fabFrac[1])*100).toFixed(0)}%`] ]);
+    block('Lamination comparison (feasible area)', S.compare.map(c=>[`${c.label} · ${c.per} per 2x · min R ${fmtM(c.Rmin,1)}`, (c.feasible*100).toFixed(0)+' %', c.feasible<0.999]));
+  } else {
+  block(`Timber stock: ${S.size} ${S.orientLabel()}`, [
+    ['Board section (actual)', `${prm.t} x ${prm.d} mm`], ['Layers / panel thickness', `${prm.layers} / ${st.T.toFixed(0)} mm`],
+    ['E / forming stress limit', `${prm.E} / ${prm.fb} MPa`], ['Tightest bend for this stock', fmtM(st.stockRmin,1)],
+    ...(S.boards? [['Members / pieces', `${S.boards.tot.members} / ${S.boards.tot.pieces}`], [`Stock to buy (${$('stockLen').value} ft)`, `${S.boards.tot.pieces} pcs · ${(S.boards.tot.linear/FT).toFixed(0)} lin ft`],
+      ['Offcut waste / failing pieces', `${(S.boards.tot.waste*100).toFixed(0)}% / ${S.boards.tot.failing}`, S.boards.tot.failing>0]] : [['Boards', boardsText()]]),
+    ['Timber volume', (st.volume/1e9).toFixed(2)+' m³'],
+    ['Area that bends OK / near limit', `${(st.fabFrac[0]*100).toFixed(0)}% / ${(st.fabFrac[1]*100).toFixed(0)}%`],
+    ['Area that fails / fails badly', `${(st.fabFrac[2]*100).toFixed(0)}% / ${(st.fabFrac[3]*100).toFixed(0)}%`, st.fabFrac[2]+st.fabFrac[3]>0.001],
+    ['Governing failure', st.governing] ]);
+  block('Size comparison (feasible area)', S.compare.map(c=>[`${c.size} · ${c.T.toFixed(0)} mm · bend limit ${fmtM(c.Rmin,1)}`, (c.feasible*100).toFixed(0)+' %', c.feasible<0.999])); }
+  pdf.setFont('helvetica','normal'); pdf.setFontSize(7.5); pdf.setTextColor(...mute);
+  const note='Method: each surface is sampled on a UV grid; principal curvatures come from the first and second fundamental forms (finite differences). Trimmed faces are analysed over their full underlying surface. Timber check: bending stress = E \u00b7 h \u00b7 k / 2 against the forming limit (k = normal curvature along the board), plus the gap under a flat board across its width (b\u00b2 \u00b7 k / 8) against the fit tolerance. E and the forming limit are placeholders until physical bending tests.' + (S.route==='billet'? ' Billet route: each member piece gets a minimum-volume singly curved billet (bending plane + minimum-area annular sector, depth rounded to whole lams); members split where the billet would exceed the CNC opening or waste target.' : '');
+  pdf.text(pdf.splitTextToSize(note, col), x, Math.max(y, 262));
+  pdf.setDrawColor(220,216,207); pdf.line(14,285,406,285);
+  pdf.text('Generated by the Surface Curvature Analyzer · LC hackathon · doubly curved timber', 14, 290);
+  await save(`${baseName()}_curvature_sheet.pdf`, pdf.output('arraybuffer'));
+});
+
+$('ex3dm').onclick=guard(async()=>{
+  if(!S.rh) throw new Error('the Rhino reader has not loaded yet');
+  const bytes=build3dm(), name=`${baseName()}_${S.route==='billet'?'billets':'members'}.3dm`;
+  try{ await S.downloads.save({filename:name, data:bytes.slice()}); return 'Rhino model saved'; }
+  catch(e){ if(e&&e.code==='declined') return 'Download cancelled';
+    if(e&&(e.code==='rejected_extension'||e.code==='extension_not_enabled')){
+      await save(name.replace(/\.3dm$/,'_3dm.zip'), new Blob([fflate.zipSync({[name]:bytes},{level:6})]));
+      return 'This viewer only allows .zip downloads, so the .3dm is inside the zip'; }
+    throw e; }
+});
+$('exZip').onclick=guard(async()=>{
+  const rh=S.rh; const files={}; const enc=new TextEncoder(); const prm=params(); const [dLo,dHi]=Core.offsetRange(Core.stockDims(prm).T,prm.mode);
+  if(rh) files[`${baseName()}_${S.route==='billet'?'billets':'members'}.3dm`]=build3dm();
+  const rows=['surface,i,j,u,v,x_mm,y_mm,z_mm,nx,ny,nz,K_per_m2,H_per_m,k1_per_m,k2_per_m,Rmin_m,type,board_dir,board_index,util_bending,util_fit,utilisation,check'];
+  const TL=['planar','single','synclastic','anticlastic'], FL=['ok','near_limit','fails','fails_badly','offset_self_intersects'];
+  for(const p of S.patches){ if(!p.res) continue; const r=p.res,c=p.cls;
+    for(let j=0;j<r.nv;j++) for(let i=0;i<r.nu;i++){ const q=j*r.nu+i; if(!r.ok[q]) continue;
+      rows.push([`"${p.name.replace(/"/g,"'")}"`,i,j,r.UV[q*2].toFixed(5),r.UV[q*2+1].toFixed(5),r.P[q*3].toFixed(2),r.P[q*3+1].toFixed(2),r.P[q*3+2].toFixed(2),
+        r.N[q*3].toFixed(5),r.N[q*3+1].toFixed(5),r.N[q*3+2].toFixed(5),(r.K[q]*1e6).toExponential(5),(r.H[q]*1e3).toExponential(5),
+        (r.k1[q]*1e3).toExponential(5),(r.k2[q]*1e3).toExponential(5),isFinite(c.R[q])?(c.R[q]/1000).toFixed(4):'inf',TL[c.type[q]],c.dir,p.strip?p.strip[q]:'',c.Ub[q].toFixed(3),c.Uf[q].toFixed(3),c.U[q].toFixed(3),FL[c.fab[q]]].join(',')); } }
+  files[`${baseName()}_curvature_samples.csv`]=enc.encode(rows.join('\n'));
+  { const B=ensureBoards(); const cl=['member,piece,of,cut_length_mm,cut_length_ft_in,stock,stock_length_ft,ripped,max_utilisation,tightest_bend_along_m,governs,status,surface'];
+    for(const q of B.pieces) cl.push([`B${String(q.board).padStart(3,'0')}`,q.piece,q.nPieces,q.len.toFixed(0),`"${fmtFtIn(q.len).replace(/"/g,'""')}"`,S.size,q.stockFt,q.ripped?'yes':'no',q.Umax.toFixed(3),isFinite(q.Rb)?(q.Rb/1000).toFixed(2):'inf',q.gov,q.status,`"${q.patch.replace(/"/g,"'")}"`].join(','));
+    if(!B.billetMode) files[`${baseName()}_cutlist_${S.size}_${$('stockLen').value}ft.csv`]=enc.encode(cl.join('\n'));
+    else { const prm2=params(), M=machine();
+      const bl=['piece,member,piece_no,piece_length_mm,billet_radius_mm,lams,lam_mm,billet_width_mm,billet_depth_mm,billet_length_mm,billet_m3,part_m3,waste_pct,tightest_lam_R_over_t,lam_ok,cnc_opening_mm,cnc_fits,cnc_orientation,cnc_margin_mm,status'];
+      for(const q of B.pieces){ const f=q.fit; if(!f) continue; const b=f.b;
+        bl.push([`B${String(q.board).padStart(3,'0')}-P${q.piece}`,q.board,q.piece,q.len.toFixed(0),isFinite(b.R)?b.R.toFixed(0):'straight',b.lamCount,b.lamT,b.width.toFixed(0),b.depth.toFixed(0),b.length.toFixed(0),(b.volume/1e9).toFixed(4),(f.vol/1e9).toFixed(4),(f.waste*100).toFixed(1),isFinite(b.rLam)?(b.rLam/b.lamT).toFixed(0):'inf',f.rtOk?'yes':'no',`${M.w}x${M.h}`,f.cnc.fits?'yes':'no',f.cnc.best.label,f.cnc.best.margin.toFixed(0),BST_L[q.bst]].join(',')); }
+      files[`${baseName()}_billets.csv`]=enc.encode(bl.join('\n'));
+      const lr=['piece,layer,lam_length_mm_incl_trim,boards_across,lam_mm,lam_stock'];
+      for(const [bd,pc,i,L,n] of B.tot.billet.layerRows) lr.push([`B${String(bd).padStart(3,'0')}-P${pc}`,i,L.toFixed(0),n,prm2.lamT,prm2.lamStock].join(','));
+      files[`${baseName()}_lam_layers.csv`]=enc.encode(lr.join('\n')); } }
+  const st=S.stats;
+  files['summary.json']=enc.encode(JSON.stringify({ file:S.fileName, units_source:S.fileUnitName, params:prm, verdict:st.verdict, detail:st.verdictDetail,
+    area_m2:st.area/1e6, volume_m3:st.volume/1e9, K_min_per_m2:st.Kmin*1e6, K_max_per_m2:st.Kmax*1e6, R_min_m:st.Rmin/1000, R_min_at_mm:st.RminAt,
+    stock:S.size, orientation:prm.orient, stock_bend_limit_m:st.stockRmin/1000, panel_thickness_mm:st.T, max_thickness_mm:st.Tmax, feasible_area_fraction:st.feasible, governing:st.governing,
+    route:S.route, billets:S.boards&&S.boards.billetMode? (({layerRows,...rest})=>rest)(S.boards.tot.billet) : null,
+    size_comparison:S.compare, stock_length_ft:+$('stockLen').value, members:S.boards?S.boards.tot:null, type_area_fraction:{planar:st.typeFrac[0],single:st.typeFrac[1],synclastic:st.typeFrac[2],anticlastic:st.typeFrac[3]},
+    check_area_fraction:{ok:st.fabFrac[0],near_limit:st.fabFrac[1],fails:st.fabFrac[2],fails_badly:st.fabFrac[3],offset_self_intersects:st.fabFrac[4]} }, null, 2));
+  const blob=new Blob([fflate.zipSync(files,{level:6})]);
+  await save(`${baseName()}_analysis.zip`, blob);
+});
+function build3dm(){
+  const rh=S.rh, prm=params(), [dLo,dHi]=Core.offsetRange(Core.stockDims(prm).T,prm.mode);
+    const doc=new rh.File3dm(); doc.settings().modelUnitSystem=rh.UnitSystem.Millimeters;
+    const LY={surf:-1,ok:-1,fail:-1};
+    try{ const lt=doc.layers(); LY.surf=lt.addLayer('Analysis surface',{r:150,g:150,b:150,a:255}); const tag=S.route==='billet'?'billet pieces':`${S.size}`; LY.ok=lt.addLayer(`Members ${tag} - OK`,{r:58,g:143,b:90,a:255}); LY.fail=lt.addLayer(`Members ${tag} - ${S.route==='billet'?'check':'fail'}`,{r:200,g:68,b:60,a:255}); }catch(e){ console.warn('layers',e); }
+    for(const p of S.patches){ if(!p.res) continue;
+      const g=buildPatchGeometry(p,dLo,dHi,true); const m=new rh.Mesh();
+      for(let k=0;k<g.sidx.length;k++){ m.vertices().add(g.pos[k*3],g.pos[k*3+1],g.pos[k*3+2]); const c=sampleColor(p,g.sidx[k]); m.vertexColors().add(Math.round(c[0]*255),Math.round(c[1]*255),Math.round(c[2]*255)); }
+      for(let k=0;k<g.idx.length;k+=3) m.faces().addTriFace(g.idx[k],g.idx[k+1],g.idx[k+2]);
+      m.normals().computeNormals(); m.compact && m.compact();
+      const at=new rh.ObjectAttributes(); at.name=`${p.name} · ${S.size} ${S.orientLabel()} · ${st_T()} mm`; if(LY.surf>=0) at.layerIndex=LY.surf; doc.objects().addMesh(m,at);
+    }
+    const B=ensureBoards();
+    let LYb=-1; if(B.billetMode){ try{ LYb=doc.layers().addLayer('Billets',{r:217,g:185,b:143,a:255}); }catch(e){} }
+    for(const q of B.pieces){ if(!B.billetMode || !q.fit || q.bv1<=q.bv0) continue; const m=new rh.Mesh();
+      for(let v=q.bv0; v<q.bv1; v++) m.vertices().add(B.bpos[v*3],B.bpos[v*3+1],B.bpos[v*3+2]);
+      for(let k=q.bi0;k<q.bi1;k+=3) m.faces().addTriFace(B.bidx[k]-q.bv0,B.bidx[k+1]-q.bv0,B.bidx[k+2]-q.bv0);
+      m.normals().computeNormals(); const b=q.fit.b;
+      const at=new rh.ObjectAttributes(); at.name=`BILLET B${String(q.board).padStart(3,'0')}-P${q.piece} · R ${isFinite(b.R)?b.R.toFixed(0):'straight'} · ${b.lamCount}x${b.lamT} lams · ${b.width.toFixed(0)}x${b.depth.toFixed(0)}`;
+      if(LYb>=0) at.layerIndex=LYb; doc.objects().addMesh(m,at); }
+    for(const q of B.pieces){ const m=new rh.Mesh();
+      for(let v=q.v0; v<q.v1; v++){ m.vertices().add(B.pos[v*3],B.pos[v*3+1],B.pos[v*3+2]); const c=B.geo.attributes.color; m.vertexColors().add(Math.round(c.getX(v)*255),Math.round(c.getY(v)*255),Math.round(c.getZ(v)*255)); }
+      for(let k=q.i0;k<q.i1;k+=3) m.faces().addTriFace(B.idx[k]-q.v0,B.idx[k+1]-q.v0,B.idx[k+2]-q.v0);
+      m.normals().computeNormals();
+      const at=new rh.ObjectAttributes(); at.name=`B${String(q.board).padStart(3,'0')}-P${q.piece} · ${S.size} · ${(q.len/1000).toFixed(3)} m · ${q.status}`;
+      const ly=(B.billetMode? q.bst>=1 : q.Umax>1)?LY.fail:LY.ok; if(ly>=0) at.layerIndex=ly; doc.objects().addMesh(m,at); }
+  return doc.toByteArray().slice();
+}
+function guard(fn){ return async(ev)=>{ const b=ev&&ev.currentTarget; if(b) b.disabled=true; setStatus('Preparing export…');
+  try{ const msg=await fn(); setStatus(msg||'Export ready'); }catch(e){ console.error(e); setStatus('Export failed: '+(e&&e.message||e), true); }
+  finally{ if(b) b.disabled=!S.downloads; } }; }
+function st_T(){ return Core.stockDims(params()).T.toFixed(0); }
+</script>
+</body>
+</html>
