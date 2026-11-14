@@ -1,0 +1,12 @@
+* text=auto
+*.3dm binary
+*.gh binary
+*.toe binary
+*.tox binary
+*.blend binary
+*.skp binary
+*.rvt binary
+*.dwg binary
+*.pdf binary
+*.png binary
+*.jpg binary
