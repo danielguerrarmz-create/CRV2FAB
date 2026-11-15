@@ -48,6 +48,15 @@ later.
 
 Full steps: [`rhino7/README.md`](integrated/crv2fab-open-sourced/rhino7/README.md).
 
+## Also in this repo: the glulam slicer
+
+[`integrated/crv2fab-glulam-slicer/`](integrated/crv2fab-glulam-slicer/) is a Rhino 8 Grasshopper
+definition that turns axis curves into double-curved glulam beams made of real boards: labelled
+fabrication pieces, raw CNC blocks, a bill of materials and cut list, and realistic render meshes. It
+works on its own and is **not yet connected to the plugin**. It is here for further development, and
+for anyone who wants to integrate it. Read its
+[`INTEGRATION.md`](integrated/crv2fab-glulam-slicer/INTEGRATION.md).
+
 ## Documentation
 
 | Read | For |
@@ -56,7 +65,7 @@ Full steps: [`rhino7/README.md`](integrated/crv2fab-open-sourced/rhino7/README.m
 | [`ARCHITECTURE.md`](integrated/crv2fab-open-sourced/ARCHITECTURE.md) | How the parts fit, one request start to finish, where to change things, tests, privacy |
 | [`core/README.md`](integrated/crv2fab-open-sourced/core/README.md) | The rules service's HTTP contract, with worked examples |
 | [`core/docs/SPEC_V9.md`](integrated/crv2fab-open-sourced/core/docs/SPEC_V9.md) | The three-stroke member and its rules |
-| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) and [`AGENTS.md`](AGENTS.md) | How the team works in this repo, for people and coding agents |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) and [`AGENTS.md`](AGENTS.md) | How to contribute, where things live, where help is wanted; the rules every coding agent follows |
 
 ## Limits are placeholders
 

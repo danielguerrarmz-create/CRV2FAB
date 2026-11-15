@@ -29,3 +29,10 @@ Copy this block for every place where one person's output becomes another person
 - **Format:** JSON over HTTP on 127.0.0.1:8742 (`POST /nudge`, `/judge`, `/say`, `/photo`, `/undo`, `GET/POST /settings`, `GET /record`, `/tally`). Example and every field: `integrated/crv2fab-open-sourced/core/README.md`.
 - **Units / up-axis / tolerance:** millimetres, Z up; the Rhino script converts from document units at the boundary.
 - **Who owns the contract:** danielguerrarmz (`core/docs/SPEC_V9.md`).
+
+### CRV²FAB plugin → glulam slicer (proposed, not built)
+
+- **Data:** the plugin's accepted member becomes one slicer beam: centreline as the axis curve; section as `W` and `H`; end profile rotations as `RotStart`, `RotEnd` (User Text on the curve).
+- **Format:** a Rhino curve object with Attribute User Text, in the same Rhino document.
+- **Units / up-axis / tolerance:** millimetres, Z up; the slicer reads document units.
+- **Who owns the contract:** open; see `integrated/crv2fab-glulam-slicer/INTEGRATION.md` and DEBT D-022.

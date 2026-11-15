@@ -1,0 +1,12 @@
+# Python cache created when the components import crv2fab_lib.py
+__pycache__/
+*.pyc
+
+# Files written by the EXPORT button (default folder)
+CRV2FAB_export/
+
+# Rhino / Grasshopper backups and locks
+*.3dmbak
+*.rhl
+*.ghbak
+*\[*\].gh
