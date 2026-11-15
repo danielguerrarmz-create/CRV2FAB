@@ -5,12 +5,14 @@ or anything else. Humans should read it too.
 
 ## Context
 
-This is a hackathon repo assembled from code written by several people who did not coordinate. Expect
-duplicate utilities, conflicting conventions, mixed languages, hardcoded paths and different unit
-systems. That is the starting condition, not a mistake to fix on sight. Your job is to help merge it
-**without destroying anyone's work and without hiding the mess**.
+CRV²FAB began as a hackathon repo assembled from code written by several people who did not coordinate,
+and it is now open source. Expect leftovers of that start: duplicate utilities, mixed languages and
+conventions, hardcoded paths, different unit systems. Treat them as known debt, not as mistakes to fix
+on sight. Your job is to help the code grow **without destroying anyone's work and without hiding the
+mess**.
 
-The current phase is set at the bottom of `docs/CONTRIBUTING.md`. Check it before you start.
+`docs/CONTRIBUTING.md` says where everything lives, what is pending integration and where help is
+wanted. Read it before you start.
 
 ## Before you change anything
 
@@ -84,7 +86,7 @@ Shortcuts are allowed. Hidden shortcuts are not. Whenever you hardcode a path, c
 of sharing it, skip a test, stub a value for the demo or wrap code you did not understand, add a row to
 `docs/DEBT.md` **in the same commit**, using the next free ID (`D-002`, `D-003`, ...).
 
-## Integration (phase 2 onward)
+## Integration
 
 Moving code from `incoming/` to `integrated/`:
 

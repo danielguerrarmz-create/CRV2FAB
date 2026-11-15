@@ -1,47 +1,71 @@
 # Contributing to CRV²FAB
 
-How the team works in this repo. The product itself is described in the top-level `README.md`.
-
-
-AEC Hackathon submission. **This repo is a temporary integration scaffold, and it is messy on purpose.**
-
-Several people are bringing code that was written separately, in different languages, with different
-assumptions. Nothing here is coordinated yet. The repo exists to collect all of it in one place, make
-the pieces visible to each other, merge them into one working system, and pay down the debt we take on
-to get there.
+CRV²FAB is open source under MIT. Contributions from people and from their coding agents are welcome.
+This page is the map. [`AGENTS.md`](../AGENTS.md) is the rulebook every agent follows, and people
+should read it too.
 
 > GitHub slugs cannot hold the character "²", so the repo address is `CRV2FAB`.
 
-## If you are a person
+## Where things live
 
-1. Clone the repo.
-2. Copy `incoming/_TEMPLATE` to `incoming/<your-github-handle>`.
-3. Put your code in that folder exactly as it is. Do not clean it up first.
-4. Fill in `DROP.md` in your folder. Ten minutes of writing is what lets everyone else use your code.
-5. Commit and push, then point your coding agent at `AGENTS.md`.
+| Path | What it is | Status |
+|---|---|---|
+| `integrated/crv2fab-open-sourced/` | The CRV²FAB Rhino plugin (`rhino7/`) and its rules core (`core/`) | Working; Rhino 7 tested, Rhino 8 untested |
+| `integrated/crv2fab-glulam-slicer/` | Grasshopper glulam slicer: fabrication pieces, raw blocks, reports, render meshes | Standalone on Rhino 8, **pending integration** (read its `INTEGRATION.md`) |
+| `incoming/<handle>/` | A contributor's own code, as delivered, with a `DROP.md` | Not yet integrated |
+| `docs/INVENTORY.md` | One row per drop or module: what it does, how to run it | Append only |
+| `docs/INTERFACES.md` | Data formats, units and axes shared between pieces | Changed by pull request |
+| `docs/DEBT.md` | Every shortcut taken, and how it will be undone | In the same commit as the shortcut |
+| `docs/DECISIONS.md` | Choices made, and why | Whoever makes the call |
+
+Before touching the plugin, read `integrated/crv2fab-open-sourced/ARCHITECTURE.md`. It covers the
+parts, one request start to finish, where each rule lives, and how to test.
+
+## How a change gets in
+
+1. **Fork or branch.** Name branches `<your-github-handle>/<short-topic>`.
+2. **Keep one purpose per pull request.** Commit messages read `<area>: <what changed>`, for example
+   `rhino7: pick an existing curve as the Path`.
+3. **Run the tests for what you touched,** and say in the PR what you ran and what you saw.
+   - Core: `python -m pytest -q -m "not slow"` in `integrated/crv2fab-open-sourced/core/`
+   - Plugin: `python -m unittest discover -s tests -p "test_*.py"` in `.../rhino7/`
+   - Inside Rhino: `tests\run_smoke_v9.ps1` (its own Rhino scheme and port; never your own settings)
+4. **Open a pull request.** `main` takes no direct pushes, admins included, and every PR needs one
+   approving review from a maintainer.
+5. **Log your shortcuts** in `docs/DEBT.md`, and units at any new boundary in `docs/INTERFACES.md`.
+
+## Standards the code keeps
+
+- **Units: millimetres, Z up,** at every boundary. Convert at the edge, never inside someone else's
+  code.
+- **One home for each rule.** The core is the only place that decides buildability. The plugin
+  shows what the core sent and never computes its own numbers. The billet maths
+  (`core/vendor/sc_glulam/`) stays unmodified.
+- **Words people read:** plain, short, no em or en dashes. Card text follows
+  `rhino7/docs/SPEC_V9_CARD_SLOTS.md`.
+- **Tests that can fail.** A bug fix comes with a test that fails before the fix.
+
+## Public repo: what must never be committed
+
+- Secrets: keys, tokens, passwords, `.env` files. Run `gitleaks protect --staged` before you push.
+- Company or client data: machine tables, client drawings, site data, anything under NDA. The
+  core reads a private machine table only from a git-ignored `private/` folder.
+- Personal details hidden in files. Rhino `.3dm` files store the author's computer and paths, so
+  save examples from a neutral location or generate them with a script.
+- Files over 50 MB.
+
+## Where help is wanted
+
+| Item | Where to start |
+|---|---|
+| Connect the glulam slicer to the plugin | `integrated/crv2fab-glulam-slicer/INTEGRATION.md`, DEBT D-022 |
+| Test on Rhino 8 | DEBT D-021 |
+| Pick an existing curve, or draw with Polyline, Curve or Arc, as a stroke | `rhino7/gnj_rhino/card.py` (`on_stroke`, `end_stroke`) |
+| Real shop limits instead of placeholders (R/t, layers, opening, grain) | DEBT D-016, `core/gnj_nudge/settings.py` |
 
 ## If you are an agent
 
-Read [`AGENTS.md`](AGENTS.md) before you change anything. It is the rulebook for this repo.
-
-## Layout
-
-| Path | What lives there | Who writes it |
-|---|---|---|
-| `incoming/<handle>/` | Each person's code, as delivered | Only that person and their agent |
-| `integrated/` | Merged code with one owner and a written interface | Pull requests only |
-| `docs/INVENTORY.md` | One row per drop: what it does, how to run it | Everyone, append only |
-| `docs/INTERFACES.md` | Data formats, units and axes shared between pieces | Pull requests only |
-| `docs/DEBT.md` | Every shortcut we took, and how we will undo it | Everyone, in the same commit as the shortcut |
-| `docs/DECISIONS.md` | Choices the team made, and why | Whoever made the call |
-
-## Phases
-
-| Phase | Goal | Done when |
-|---|---|---|
-| 0. Collect | Everyone's code is in `incoming/` | Every contributor has a folder with a filled `DROP.md` |
-| 1. Map | We know what exists and how it connects | `INVENTORY.md` and `INTERFACES.md` cover every drop |
-| 2. Integrate | One pipeline runs end to end | The demo path runs from `integrated/` |
-| 3. Pay down | The debt is visible and shrinking | Every `DEBT.md` item is closed or has an owner |
-
-**Current phase: 0. Collect**
+Read [`AGENTS.md`](../AGENTS.md) before you change anything. Then read this page, the top-level
+`README.md`, and the `ARCHITECTURE.md` or `INTEGRATION.md` of the folder you will touch. Never push to
+`main`, never approve or merge a pull request, and stop and ask your human whenever a change would
+touch someone else's folder.
