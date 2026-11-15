@@ -1,0 +1,22 @@
+[project]
+name = "gnj-nudge-core"
+version = "0.1.0"
+description = "Gesture, Nudge, Judge: the nudge core for the bent 2x4 demo"
+requires-python = ">=3.13"
+dependencies = ["anthropic", "pillow"]  # pillow: /photo downsizes and strips EXIF; without it photos are refused
+
+[project.optional-dependencies]
+test = ["pytest"]
+surface = ["numpy"]  # the surface kind (sc_glulam route); the bend kind does not need it
+
+[tool.setuptools]
+packages = ["gnj_nudge"]
+
+[tool.setuptools.package-data]
+gnj_nudge = ["limits.placeholder.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]
+addopts = "--basetemp=.pytest-tmp"
+markers = ["slow: billet fits, child processes or deliberate waits (quick run: -m \"not slow\")"]

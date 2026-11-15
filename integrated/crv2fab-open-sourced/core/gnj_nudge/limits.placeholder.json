@@ -1,0 +1,10 @@
+{
+  "note": "Placeholder fabrication limits for the 2x4 demo. Replace with the Grasshopper definitions when they arrive. bend_ratio and min_lamella apply to both faces: layers through the thickness and strips across the width.",
+  "cards": [
+    {"id": "bend_ratio", "quantity": "bend radius / piece thickness in the bending direction, minimum", "value": 200, "unit": "ratio", "source": "placeholder"},
+    {"id": "min_lamella", "quantity": "thinnest piece, layer or strip", "value": 8, "unit": "mm", "source": "placeholder"},
+    {"id": "stock_thickness", "quantity": "stock thickness the layers must fill", "value": 38, "unit": "mm", "source": "placeholder"},
+    {"id": "stock_width", "quantity": "stock width the strips must fill", "value": 89, "unit": "mm", "source": "placeholder"},
+    {"id": "length", "quantity": "member length, longest span that can be bent", "value": 2400, "unit": "mm", "source": "placeholder"}
+  ]
+}
