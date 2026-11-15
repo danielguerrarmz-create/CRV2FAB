@@ -1,44 +1,62 @@
 # CRV²FAB
 
-AEC Hackathon submission. **This repo is a temporary integration scaffold, and it is messy on purpose.**
+**Draw a timber in Rhino. Get the closest one you can build.**
 
-Several people are bringing code that was written separately, in different languages, with different
-assumptions. Nothing here is coordinated yet. The repo exists to collect all of it in one place, make
-the pieces visible to each other, merge them into one working system, and pay down the debt we take on
-to get there.
+CRV²FAB is a Rhino plugin for freeform glued laminated timber. You draw a curved member in the Rhino
+viewport. It answers with ONE buildable ghost of the closest member that can be pressed as glulam
+billets and milled to shape, one plain sentence, and the material waste. You accept or reject it.
+It directs intent; it reports waste and optimises only when you ask in words.
 
-> GitHub slugs cannot hold the character "²", so the repo address is `CRV2FAB`.
+Built at the AEC Tech Hackathon NYC 2026 by Aaryan Dalal, Daniel Guerra, Keven Zhao, Christopher
+Bergeron and Adnan Agha. MIT licence.
 
-## If you are a person
+**The code:** [`integrated/crv2fab-open-sourced/`](integrated/crv2fab-open-sourced/)
 
-1. Clone the repo.
-2. Copy `incoming/_TEMPLATE` to `incoming/<your-github-handle>`.
-3. Put your code in that folder exactly as it is. Do not clean it up first.
-4. Fill in `DROP.md` in your folder. Ten minutes of writing is what lets everyone else use your code.
-5. Commit and push, then point your coding agent at `AGENTS.md`.
+## How it works
 
-## If you are an agent
+1. **Input.** A straight timber in Rhino, your own model (a line on a surface, or a solid you
+   modelled), a photo of a hand sketch, or words you type.
+2. **Gesture.** Three strokes: the path, drawn in plan and again in elevation to make one doubly
+   curved line, and the cross-section at each end.
+3. **Nudge.** One translucent ghost, never a menu. The rules fit one pressed billet per piece and
+   check the layer bend, the press and CNC opening, and grain along the member. If the drawing fails,
+   they change how it is made first (thinner layers, then shorter pieces) and move your shape last.
+4. **Judge.** Accept keeps the member. Reject means it never guesses again by itself: redraw, hold
+   what matters, or say it in words ("shorter pieces are fine").
+5. **Output.** A closed solid in Rhino, a billet box per piece with its size, the layers, the grain
+   angle and the waste, and a record of every decision.
 
-Read [`AGENTS.md`](AGENTS.md) before you change anything. It is the rulebook for this repo.
+## Install
 
-## Layout
+Rhino 7 on Windows is tested; Rhino 8 is expected to work but is untested. You need Python 3.13 or
+later.
 
-| Path | What lives there | Who writes it |
-|---|---|---|
-| `incoming/<handle>/` | Each person's code, as delivered | Only that person and their agent |
-| `integrated/` | Merged code with one owner and a written interface | Pull requests only |
-| `docs/INVENTORY.md` | One row per drop: what it does, how to run it | Everyone, append only |
-| `docs/INTERFACES.md` | Data formats, units and axes shared between pieces | Pull requests only |
-| `docs/DEBT.md` | Every shortcut we took, and how we will undo it | Everyone, in the same commit as the shortcut |
-| `docs/DECISIONS.md` | Choices the team made, and why | Whoever made the call |
+1. Clone this repo.
+2. From `integrated/crv2fab-open-sourced/rhino7/`, run
+   `powershell -ExecutionPolicy Bypass -File install.ps1`.
+3. In Rhino, run `_-RunPythonScript "<repo>\integrated\crv2fab-open-sourced\rhino7\install_rhino.py"`
+   once. It adds the command `CRV2FAB`.
+4. Type `CRV2FAB` in Rhino.
 
-## Phases
+Full steps: [`rhino7/README.md`](integrated/crv2fab-open-sourced/rhino7/README.md).
 
-| Phase | Goal | Done when |
-|---|---|---|
-| 0. Collect | Everyone's code is in `incoming/` | Every contributor has a folder with a filled `DROP.md` |
-| 1. Map | We know what exists and how it connects | `INVENTORY.md` and `INTERFACES.md` cover every drop |
-| 2. Integrate | One pipeline runs end to end | The demo path runs from `integrated/` |
-| 3. Pay down | The debt is visible and shrinking | Every `DEBT.md` item is closed or has an owner |
+## Documentation
 
-**Current phase: 0. Collect**
+| Read | For |
+|---|---|
+| [`integrated/crv2fab-open-sourced/README.md`](integrated/crv2fab-open-sourced/README.md) | The package: folders, install, what is left out on purpose |
+| [`ARCHITECTURE.md`](integrated/crv2fab-open-sourced/ARCHITECTURE.md) | How the parts fit, one request start to finish, where to change things, tests, privacy |
+| [`core/README.md`](integrated/crv2fab-open-sourced/core/README.md) | The rules service's HTTP contract, with worked examples |
+| [`core/docs/SPEC_V9.md`](integrated/crv2fab-open-sourced/core/docs/SPEC_V9.md) | The three-stroke member and its rules |
+| [`docs/CONTRIBUTING.md`](docs/CONTRIBUTING.md) and [`AGENTS.md`](AGENTS.md) | How the team works in this repo, for people and coding agents |
+
+## Limits are placeholders
+
+Layer bend R/t 125, layers of 38, 17 and 11 mm, a 1200 x 280 mm opening, grain within 10 degrees, at
+most 4 pieces. They stand in for a real shop's and are meant to be replaced.
+
+## Credits
+
+Aaryan Dalal, Daniel Guerra, Keven Zhao, Christopher Bergeron, Adnan Agha. AEC Tech Hackathon NYC
+2026. The billet maths in `core/vendor/sc_glulam/` is the team's, included unmodified with its
+author's permission. Code written with Claude Code.
