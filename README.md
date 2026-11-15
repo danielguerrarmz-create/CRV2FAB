@@ -12,6 +12,14 @@ Bergeron and Adnan Agha. MIT licence.
 
 **The code:** [`integrated/crv2fab-open-sourced/`](integrated/crv2fab-open-sourced/)
 
+## Demo
+
+A designer draws a doubly curved member, accepts it, pushes a second one further, rejects the eased answer and types "shorter pieces are fine". Recorded in Rhino 7 at real speed with pauses cut, 75 s. Every sentence on screen is the running system's own answer; the cursor and strokes are scripted.
+
+https://github.com/user-attachments/assets/ce1642ec-1233-4498-83ce-f72ac0eeb96a
+
+[Watch the demo](https://github.com/user-attachments/assets/ce1642ec-1233-4498-83ce-f72ac0eeb96a)
+
 ## How it works
 
 1. **Input.** A straight timber in Rhino, your own model (a line on a surface, or a solid you
